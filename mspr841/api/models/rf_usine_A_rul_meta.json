@@ -1,0 +1,39 @@
+{
+  "usine": "Usine_A",
+  "type": "regression",
+  "algorithme": "RandomForestRegressor",
+  "cible": "rul_target",
+  "description": "Sessions restantes avant prochain remplacement outil",
+  "session_duree_min": 30,
+  "features": [
+    "usure_cumulee_pct",
+    "TRS",
+    "temps_cycle_min",
+    "derive_cycle_pct",
+    "disponibilite",
+    "performance",
+    "qualite",
+    "consommation_kwh",
+    "vitesse_rotation_rpm",
+    "couple_nm",
+    "taux_rebut",
+    "usure_lag_1",
+    "usure_lag_2",
+    "usure_lag_3",
+    "usure_lag_5",
+    "usure_roll_mean_5",
+    "usure_roll_std_5",
+    "usure_roll_mean_10",
+    "usure_roll_std_10",
+    "usure_roll_mean_20",
+    "usure_roll_std_20",
+    "usure_delta"
+  ],
+  "metriques_test": {
+    "MAE": 1.0416,
+    "RMSE": 1.3121,
+    "R2": 0.9963
+  },
+  "horizon_critique_sessions": 10,
+  "horizon_warning_sessions": 20
+}

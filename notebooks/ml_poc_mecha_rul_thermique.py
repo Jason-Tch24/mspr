@@ -27,8 +27,10 @@
 # =============================================================================
 
 import sys
+import json
 import warnings
 warnings.filterwarnings('ignore')
+import joblib
 
 from pathlib import Path
 
@@ -726,6 +728,75 @@ for rect in list(rects1) + list(rects2):
 
 fig.tight_layout()
 generated_files.append(save_figure(fig, 'ml_usine_B_distribution_classes.png'))
+
+# =============================================================================
+# SAUVEGARDE DES MODÈLES (MSPR 841)
+# =============================================================================
+
+print("\n── Sauvegarde des modèles ───────────────────────────────────")
+
+MODELS_DIR = PROJECT_DIR / 'mspr841' / 'api' / 'models'
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── Usine A : Random Forest Regressor RUL ─────────────────────────────────────
+path_model_A    = MODELS_DIR / 'rf_usine_A_rul.joblib'
+path_meta_A     = MODELS_DIR / 'rf_usine_A_rul_meta.json'
+
+joblib.dump(rf_A, path_model_A)
+
+meta_A = {
+    'usine'          : 'Usine_A',
+    'type'           : 'regression',
+    'algorithme'     : 'RandomForestRegressor',
+    'cible'          : 'rul_target',
+    'description'    : 'Sessions restantes avant prochain remplacement outil',
+    'session_duree_min': 30,
+    'features'       : features_A,
+    'metriques_test' : {
+        'MAE'  : round(float(mae_A), 4),
+        'RMSE' : round(float(rmse_A), 4),
+        'R2'   : round(float(r2_A), 4),
+    },
+    'horizon_critique_sessions': 10,
+    'horizon_warning_sessions' : 20,
+}
+with open(path_meta_A, 'w', encoding='utf-8') as f:
+    json.dump(meta_A, f, indent=2, ensure_ascii=False)
+
+print(f"  [OK] Usine A — modèle  : {path_model_A.name}")
+print(f"  [OK] Usine A — méta    : {path_meta_A.name}")
+
+# ── Usine B : XGBoost Classifier risque thermique ─────────────────────────────
+path_model_B    = MODELS_DIR / 'xgb_usine_B_risque.joblib'
+path_meta_B     = MODELS_DIR / 'xgb_usine_B_risque_meta.json'
+
+joblib.dump(xgb_B, path_model_B)
+
+meta_B = {
+    'usine'          : 'Usine_B',
+    'type'           : 'classification',
+    'algorithme'     : 'XGBClassifier',
+    'cible'          : 'risque_label',
+    'classes'        : {0: 'Normal', 1: 'Risque', 2: 'Critique'},
+    'description'    : 'Risque de panne thermique dans les prochaines sessions',
+    'horizon_critique_sessions': HORIZON_CRITIQUE,
+    'horizon_risque_sessions'  : HORIZON_RISQUE,
+    'features'       : features_B,
+    'metriques_test' : {
+        'balanced_accuracy': round(float(bal_acc_B), 4),
+        'balanced_accuracy_val': round(float(bal_acc_val_B), 4),
+    },
+    'note': (
+        'Modèle entraîné avec SMOTE (rééquilibrage classes). '
+        'Recall Critique faible sur données simulées — '
+        'recalibration sur données terrain recommandée.'
+    ),
+}
+with open(path_meta_B, 'w', encoding='utf-8') as f:
+    json.dump(meta_B, f, indent=2, ensure_ascii=False)
+
+print(f"  [OK] Usine B — modèle  : {path_model_B.name}")
+print(f"  [OK] Usine B — méta    : {path_meta_B.name}")
 
 # =============================================================================
 # RÉSUMÉ FINAL

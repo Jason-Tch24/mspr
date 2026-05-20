@@ -1,0 +1,34 @@
+{
+  "missing_values": {
+    "colonnes": [
+      "Air temperature [K]",
+      "Process temperature [K]",
+      "Rotational speed [rpm]",
+      "Torque [Nm]"
+    ],
+    "lignes_par_colonne": 50,
+    "total_nulls": 200
+  },
+  "duplicates": {
+    "lignes_dupliquees": 20
+  },
+  "malformed_categories": {
+    "colonne": "Type",
+    "valeurs_invalides": [
+      "X",
+      "low",
+      "MED",
+      "?"
+    ],
+    "lignes_affectees": 15
+  },
+  "out_of_range": {
+    "colonne": "Rotational speed [rpm]",
+    "valeurs_injectees": [
+      -50,
+      3500,
+      9999
+    ],
+    "lignes_affectees": 10
+  }
+}

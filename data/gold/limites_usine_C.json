@@ -1,0 +1,56 @@
+{
+  "TRS": {
+    "kpi": "TRS",
+    "moyenne": 0.8577,
+    "sigma": 0.0877,
+    "ucl": 1.1208,
+    "lcl": 0.5945,
+    "uwl": 1.0331,
+    "lwl": 0.6823
+  },
+  "taux_rebut": {
+    "kpi": "taux_rebut",
+    "moyenne": 0.1131,
+    "sigma": 0.071,
+    "ucl": 0.3261,
+    "lcl": 0,
+    "uwl": 0.2551,
+    "lwl": 0
+  },
+  "temps_cycle_min": {
+    "kpi": "temps_cycle_min",
+    "moyenne": 42.7698,
+    "sigma": 2.1655,
+    "ucl": 49.2664,
+    "lcl": 36.2733,
+    "uwl": 47.1009,
+    "lwl": 38.4388
+  },
+  "temp_process_delta": {
+    "kpi": "temp_process_delta",
+    "moyenne": 9.505,
+    "sigma": 0.5979,
+    "ucl": 11.2986,
+    "lcl": 7.7114,
+    "uwl": 10.7007,
+    "lwl": 8.3093
+  },
+  "consommation_kwh": {
+    "kpi": "consommation_kwh",
+    "moyenne": 2.8156,
+    "sigma": 0.5294,
+    "ucl": 4.4039,
+    "lcl": 1.2272,
+    "uwl": 3.8744,
+    "lwl": 1.7567
+  },
+  "indice_stabilite": {
+    "kpi": "indice_stabilite",
+    "moyenne": 0.7341,
+    "sigma": 0.1323,
+    "ucl": 1.131,
+    "lcl": 0.3372,
+    "uwl": 0.9987,
+    "lwl": 0.4695
+  }
+}

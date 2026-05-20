@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-04-16T10:12:00.889480",
+  "lignes_bronze": 10020,
+  "doublons_retires": 20,
+  "categories_inv": 15,
+  "lignes_silver": 9985,
+  "nulls_restants": 0,
+  "imputation": {
+    "Air temperature [K]": {
+      "nulls_imput\u00e9s": 50,
+      "valeur_m\u00e9diane": 300.1
+    },
+    "Process temperature [K]": {
+      "nulls_imput\u00e9s": 50,
+      "valeur_m\u00e9diane": 310.1
+    },
+    "Rotational speed [rpm]": {
+      "nulls_imput\u00e9s": 50,
+      "valeur_m\u00e9diane": 1503.0
+    },
+    "Torque [Nm]": {
+      "nulls_imput\u00e9s": 50,
+      "valeur_m\u00e9diane": 40.1
+    }
+  },
+  "clipping": {
+    "Air temperature [K]": {
+      "valeurs_hors_plage": 0,
+      "borne_basse": 290.0,
+      "borne_haute": 320.0
+    },
+    "Process temperature [K]": {
+      "valeurs_hors_plage": 0,
+      "borne_basse": 300.0,
+      "borne_haute": 330.0
+    },
+    "Rotational speed [rpm]": {
+      "valeurs_hors_plage": 10,
+      "borne_basse": 0.0,
+      "borne_haute": 3000.0
+    },
+    "Torque [Nm]": {
+      "valeurs_hors_plage": 0,
+      "borne_basse": 0.0,
+      "borne_haute": 80.0
+    },
+    "Tool wear [min]": {
+      "valeurs_hors_plage": 0,
+      "borne_basse": 0.0,
+      "borne_haute": 300.0
+    }
+  },
+  "colonnes": [
+    "id",
+    "produit_id",
+    "qualite_produit",
+    "temp_air_c",
+    "temp_process_c",
+    "vitesse_rotation_rpm",
+    "couple_nm",
+    "usure_outil_min",
+    "panne_machine",
+    "panne_usure_outil",
+    "panne_thermique",
+    "panne_puissance",
+    "panne_surcharge",
+    "panne_aleatoire",
+    "temp_process_delta"
+  ]
+}

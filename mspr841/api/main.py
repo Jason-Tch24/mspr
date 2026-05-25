@@ -58,6 +58,24 @@ except RuntimeError as e:
 _FEATURES_A: list = _meta_A["features"] if _meta_A else []
 _FEATURES_B: list = _meta_B["features"] if _meta_B else []
 
+def _model_label(meta: dict | None, usine: str) -> str:
+    """Construit le libellé modèle depuis le méta JSON."""
+    if not meta:
+        return "modèle non chargé"
+    algo = meta.get("algorithme", "?")
+    cv   = meta.get("metriques_cv", {})
+    if meta.get("type") == "regression":
+        mae = cv.get("MAE_mean", meta.get("metriques_test", {}).get("MAE", "?"))
+        r2  = cv.get("R2_mean",  meta.get("metriques_test", {}).get("R2",  "?"))
+        return f"{algo} · MAE={mae} sessions · R²={r2}"
+    else:
+        bal = cv.get("BalancedAccuracy_mean", "?")
+        rec = cv.get("RecallCritique_mean",   "?")
+        return f"{algo} · BalAcc={bal} · RecallCritique={rec}"
+
+_LABEL_A = _model_label(_meta_A, "Usine_A")
+_LABEL_B = _model_label(_meta_B, "Usine_B")
+
 # ─────────────────────────────────────────────────────────────
 # APPLICATION
 # ─────────────────────────────────────────────────────────────
@@ -245,7 +263,7 @@ def predict_rul(data: RULInput) -> RULOutput:
         usure_cumulee_pct = data.usure_cumulee_pct,
         niveau_alerte     = alerte,
         interpretation    = msg,
-        modele            = "RandomForestRegressor · MAE=1.04 sessions · R²=0.996",
+        modele            = _LABEL_A,
     )
 
 
@@ -291,5 +309,5 @@ def predict_risque_thermique(data: RisqueThermInput) -> RisqueThermOutput:
         },
         niveau_alerte  = _risque_alerte(label),
         interpretation = msgs[label],
-        modele         = "XGBClassifier + SMOTE · Balanced Accuracy=0.417",
+        modele         = _LABEL_B,
     )

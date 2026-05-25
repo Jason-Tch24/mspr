@@ -921,7 +921,6 @@ def build_tab_ai_A(state: dict, theme: dict, demo_data: dict | None = None) -> h
                 id=sid, min=mn, max=mx, step=step, value=val,
                 marks=None, tooltip={'always_visible': False},
                 updatemode='drag',
-                styles={'container': {'padding': '4px 0'}},
             ),
         ])
 

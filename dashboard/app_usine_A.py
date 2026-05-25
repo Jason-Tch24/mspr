@@ -13,6 +13,7 @@ from datetime import datetime
 import dash
 from dash import dcc, html, Input, Output, State, ctx
 import plotly.graph_objects as go
+import requests
 
 import store
 import kpi_engine
@@ -888,6 +889,244 @@ def build_tab_alerts(theme: dict) -> html.Div:
     ])
 
 # ─────────────────────────────────────────────────────────────
+# TAB AI — Prédiction RUL Usine A
+# ─────────────────────────────────────────────────────────────
+_AI_API_URL_A = 'http://localhost:8000/predict/rul'
+
+def build_tab_ai_A(state: dict, theme: dict) -> html.Div:
+    """Onglet IA : appelle l'API FastAPI et affiche la prédiction RUL."""
+
+    # ── Appel API ────────────────────────────────────────────
+    api_ok      = False
+    rul         = None
+    rul_h       = None
+    alerte      = 'OK'
+    interpreta  = ''
+    modele_info = ''
+    err_msg     = ''
+
+    payload = {
+        'usure_cumulee_pct'  : state.get('usure_cumulee_pct', 50.0),
+        'TRS'                : state.get('TRS', 0.9),
+        'temps_cycle_min'    : state.get('temps_cycle_min', 45.0),
+        'derive_cycle_pct'   : state.get('derive_cycle_pct', 0.0),
+        'disponibilite'      : state.get('disponibilite', 1.0),
+        'performance'        : state.get('performance', 1.0),
+        'qualite'            : state.get('qualite', 1.0),
+        'consommation_kwh'   : state.get('consommation_kwh', 3.1),
+        'vitesse_rotation_rpm': state.get('vitesse_rotation_rpm', 1500),
+        'couple_nm'          : state.get('couple_nm', 40.0),
+        'taux_rebut'         : state.get('taux_rebut', 0.04),
+    }
+
+    try:
+        resp = requests.post(_AI_API_URL_A, json=payload, timeout=2)
+        if resp.status_code == 200:
+            data        = resp.json()
+            api_ok      = True
+            rul         = data.get('rul_sessions', 0)
+            rul_h       = data.get('rul_heures', 0)
+            alerte      = data.get('niveau_alerte', 'OK')
+            interpreta  = data.get('interpretation', '')
+            modele_info = data.get('modele', '')
+        else:
+            err_msg = f"API erreur {resp.status_code}"
+    except Exception as e:
+        err_msg = f"API indisponible — lancez l'API sur le port 8000 ({type(e).__name__})"
+
+    # ── Couleurs alerte ────────────────────────────────────────
+    alerte_color = {
+        'CRITICAL': theme['critical'],
+        'WARNING' : theme['warning'],
+        'OK'      : theme['ok'],
+    }.get(alerte, theme['text_muted'])
+
+    alerte_bg = _rgba(alerte_color, 0.12)
+
+    # ── Jauge RUL ─────────────────────────────────────────────
+    if api_ok:
+        max_rul = 80
+        rul_val = min(float(rul), max_rul)
+        gauge_color = alerte_color
+        fig_gauge = go.Figure(go.Indicator(
+            mode='gauge+number',
+            value=rul_val,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': 'RUL (sessions)', 'font': {'size': 11, 'color': theme['text_secondary']}},
+            number={'font': {'size': 28, 'color': gauge_color}},
+            gauge={
+                'axis': {'range': [0, max_rul], 'tickwidth': 1,
+                         'tickcolor': theme['text_muted'], 'tickfont': {'size': 8}},
+                'bar': {'color': gauge_color, 'thickness': 0.22},
+                'bgcolor': theme['bg_surface'], 'borderwidth': 0,
+                'steps': [
+                    {'range': [0,  10], 'color': _rgba(theme['critical'], 0.14)},
+                    {'range': [10, 20], 'color': _rgba(theme['warning'],  0.10)},
+                    {'range': [20, max_rul], 'color': _rgba(theme['ok'],  0.06)},
+                ],
+                'threshold': {'line': {'color': theme['critical'], 'width': 2},
+                              'thickness': 0.75, 'value': 10},
+            }
+        ))
+        layout_g = _plot_layout(theme, height=220)
+        layout_g['margin'] = dict(l=20, r=20, t=40, b=10)
+        fig_gauge.update_layout(layout_g)
+        gauge_el = dcc.Graph(figure=fig_gauge, config={'displayModeBar': False})
+    else:
+        gauge_el = html.Div(
+            err_msg,
+            style={'fontSize': '12px', 'color': theme['critical'],
+                   'padding': '40px 20px', 'textAlign': 'center',
+                   'background': _rgba(theme['critical'], 0.06),
+                   'borderRadius': '12px', 'fontStyle': 'italic'},
+        )
+
+    # ── Carte résultat ─────────────────────────────────────────
+    result_card = html.Div(style={
+        'display': 'flex', 'flexDirection': 'column', 'gap': '14px',
+        'padding': '20px', 'background': theme['bg_surface'],
+        'borderRadius': '16px', 'border': f"1px solid {theme['border']}",
+    }, children=[
+        # Badge alerte
+        html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '8px'}, children=[
+            html.Span('●', style={'color': alerte_color, 'fontSize': '10px'}),
+            html.Span(alerte, style={
+                'fontSize': '11px', 'fontWeight': '800', 'color': alerte_color,
+                'padding': '3px 10px', 'borderRadius': '999px',
+                'background': alerte_bg, 'border': f'1px solid {_rgba(alerte_color, 0.3)}',
+            }),
+        ]) if api_ok else html.Div(),
+
+        # Valeurs principales
+        html.Div(style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr', 'gap': '10px'}, children=[
+            html.Div(style={
+                'background': theme['bg_card'], 'borderRadius': '12px',
+                'padding': '14px', 'border': f"1px solid {theme['border']}",
+                'textAlign': 'center',
+            }, children=[
+                html.Div('Sessions restantes', style={'fontSize': '10px', 'color': theme['text_muted'],
+                                                       'textTransform': 'uppercase', 'fontWeight': '700'}),
+                html.Div(f'{rul:.0f}' if api_ok else '—',
+                         style={'fontSize': '30px', 'fontWeight': '800',
+                                'color': alerte_color if api_ok else theme['text_muted']}),
+            ]),
+            html.Div(style={
+                'background': theme['bg_card'], 'borderRadius': '12px',
+                'padding': '14px', 'border': f"1px solid {theme['border']}",
+                'textAlign': 'center',
+            }, children=[
+                html.Div('Heures restantes', style={'fontSize': '10px', 'color': theme['text_muted'],
+                                                     'textTransform': 'uppercase', 'fontWeight': '700'}),
+                html.Div(f'{rul_h:.1f}h' if api_ok else '—',
+                         style={'fontSize': '30px', 'fontWeight': '800',
+                                'color': alerte_color if api_ok else theme['text_muted']}),
+            ]),
+        ]) if api_ok else html.Div(),
+
+        # Interprétation
+        html.Div(interpreta if api_ok else err_msg, style={
+            'fontSize': '12px', 'color': theme['text_secondary'],
+            'lineHeight': '1.6', 'fontStyle': 'italic',
+        }),
+    ])
+
+    # ── Données d'entrée ──────────────────────────────────────
+    def kv(label, value, highlight=False):
+        return html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+            'borderLeft': f"3px solid {theme['accent_blue']}" if highlight else '',
+        }, children=[
+            html.Div(label, style={'fontSize': '9px', 'color': theme['text_muted'],
+                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(f"{payload.get(label.lower().replace(' ', '_'), '—')}", style={
+                'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary'],
+            }),
+        ])
+
+    input_row = html.Div(style={
+        'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 'gap': '8px',
+    }, children=[
+        html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+            'borderLeft': f"3px solid {theme['accent_blue']}",
+        }, children=[
+            html.Div('Usure outil', style={'fontSize': '9px', 'color': theme['text_muted'],
+                                           'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(f"{payload['usure_cumulee_pct']:.1f}%",
+                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['accent_blue']}),
+        ]),
+        html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+        }, children=[
+            html.Div('TRS', style={'fontSize': '9px', 'color': theme['text_muted'],
+                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(f"{payload['TRS']*100:.1f}%",
+                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+        ]),
+        html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+        }, children=[
+            html.Div('Cycle', style={'fontSize': '9px', 'color': theme['text_muted'],
+                                     'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(f"{payload['temps_cycle_min']:.1f} min",
+                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+        ]),
+        html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+        }, children=[
+            html.Div('Dérive cycle', style={'fontSize': '9px', 'color': theme['text_muted'],
+                                            'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(f"{payload['derive_cycle_pct']:.1f}%",
+                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+        ]),
+    ])
+
+    return html.Div(children=[
+        html.Div(className='panel', style={'marginBottom': '14px'}, children=[
+            html.Div(className='panel-head', children=[
+                html.Div(children=[
+                    html.Div('AI · Maintenance Prédictive — RUL Outil', className='panel-title'),
+                    html.Div(
+                        f'Remaining Useful Life · {modele_info}' if api_ok
+                        else 'Remaining Useful Life · RandomForestRegressor · R²=0.996',
+                        className='panel-subtitle',
+                    ),
+                ]),
+                html.Div('MSPR 841', style={
+                    'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
+                    'borderRadius': '999px', 'color': theme['accent_purple'],
+                    'background': _rgba(theme['accent_purple'], 0.10),
+                    'border': f"1px solid {_rgba(theme['accent_purple'], 0.25)}",
+                }),
+            ]),
+            html.Div(style={
+                'display': 'grid', 'gridTemplateColumns': '1fr 1fr',
+                'gap': '16px', 'padding': '16px',
+            }, children=[
+                gauge_el,
+                result_card,
+            ]),
+        ]),
+        html.Div(className='panel', style={'padding': '16px'}, children=[
+            html.Div('Données d\'entrée · Session courante', className='panel-title',
+                     style={'marginBottom': '12px'}),
+            input_row,
+            html.Div(
+                '⚠ Mode single-session : les features de lag/rolling sont approximées '
+                'par la valeur courante. Précision maximale avec fenêtre temporelle complète.',
+                style={'fontSize': '10px', 'color': theme['text_muted'],
+                       'marginTop': '10px', 'fontStyle': 'italic'},
+            ),
+        ]),
+    ])
+
+
+# ─────────────────────────────────────────────────────────────
 # LAYOUT — dcc.Store et tab-bar-container HORS du contenu
 # ─────────────────────────────────────────────────────────────
 app.layout = html.Div(
@@ -910,14 +1149,16 @@ app.layout = html.Div(
     Input('tab-btn-maintenance-A', 'n_clicks'),
     Input('tab-btn-quality-A',     'n_clicks'),
     Input('tab-btn-alerts-A',      'n_clicks'),
+    Input('tab-btn-ai-A',          'n_clicks'),
     prevent_initial_call=True,
 )
-def switch_tab_A(n1, n2, n3, n4):
+def switch_tab_A(n1, n2, n3, n4, n5):
     mapping = {
         'tab-btn-overview-A'    : 'overview',
         'tab-btn-maintenance-A' : 'maintenance',
         'tab-btn-quality-A'     : 'quality',
         'tab-btn-alerts-A'      : 'alerts',
+        'tab-btn-ai-A'          : 'ai',
     }
     return mapping.get(ctx.triggered_id, 'overview')
 
@@ -953,10 +1194,11 @@ def update_tab_bar_A(active_tab):
         'top'           : '57px',
         'zIndex'        : '15',
     }, children=[
-        tab_btn('Overview',    'overview',    'tab-btn-overview-A'),
-        tab_btn('Maintenance', 'maintenance', 'tab-btn-maintenance-A'),
-        tab_btn('Quality',     'quality',     'tab-btn-quality-A'),
-        tab_btn('Alerts',      'alerts',      'tab-btn-alerts-A'),
+        tab_btn('Overview',       'overview',    'tab-btn-overview-A'),
+        tab_btn('Maintenance',    'maintenance', 'tab-btn-maintenance-A'),
+        tab_btn('Quality',        'quality',     'tab-btn-quality-A'),
+        tab_btn('Alerts',         'alerts',      'tab-btn-alerts-A'),
+        tab_btn('AI Predictions', 'ai',          'tab-btn-ai-A'),
     ])
 
 # ─────────────────────────────────────────────────────────────
@@ -988,6 +1230,8 @@ def update_page_A(n, active_tab):
         tab_content = build_tab_quality(state, theme)
     elif active_tab == 'alerts':
         tab_content = build_tab_alerts(theme)
+    elif active_tab == 'ai':
+        tab_content = build_tab_ai_A(state, theme)
     else:
         tab_content = build_tab_overview(state, aggs, theme)
 

@@ -13,6 +13,7 @@ from datetime import datetime
 import dash
 from dash import dcc, html, Input, Output, State, ctx
 import plotly.graph_objects as go
+import requests
 
 import store
 import kpi_engine
@@ -895,6 +896,210 @@ def build_tab_alerts(theme: dict) -> html.Div:
     ])
 
 # ─────────────────────────────────────────────────────────────
+# TAB AI — Classification risque thermique Usine B
+# ─────────────────────────────────────────────────────────────
+_AI_API_URL_B = 'http://localhost:8000/predict/risque-thermique'
+
+def build_tab_ai_B(state: dict, theme: dict) -> html.Div:
+    """Onglet IA : appelle l'API FastAPI et affiche la classification thermique."""
+
+    api_ok     = False
+    label      = None
+    nom        = ''
+    probas     = {}
+    alerte     = 'OK'
+    interpreta = ''
+    modele_info= ''
+    err_msg    = ''
+
+    payload = {
+        'temp_process_delta'      : state.get('temp_process_delta', 10.0),
+        'TRS'                     : state.get('TRS', 0.9),
+        'taux_rebut'              : state.get('taux_rebut', 0.03),
+        'disponibilite'           : state.get('disponibilite', 1.0),
+        'performance'             : state.get('performance', 1.0),
+        'consommation_kwh'        : state.get('consommation_kwh', 3.5),
+        'temps_cycle_min'         : state.get('temps_cycle_min', 40.0),
+        'derive_cycle_pct'        : state.get('derive_cycle_pct', 0.0),
+        'nb_pannes_7j'            : int(state.get('nb_pannes_7j', 0)),
+        'temp_process_c'          : state.get('temp_process_c', 34.0),
+        'usure_cumulee_pct'       : state.get('usure_cumulee_pct', 42.0),
+        'couple_nm'               : state.get('couple_nm', 45.0),
+        'vitesse_rotation_rpm'    : state.get('vitesse_rotation_rpm', 1530),
+        'indice_stabilite_process': state.get('indice_stabilite_process', 0.9),
+        'panne_usure_outil'       : int(state.get('panne_usure_outil', 0)),
+    }
+
+    try:
+        resp = requests.post(_AI_API_URL_B, json=payload, timeout=2)
+        if resp.status_code == 200:
+            data        = resp.json()
+            api_ok      = True
+            label       = data.get('risque_label', 0)
+            nom         = data.get('risque_nom', 'Normal')
+            probas      = data.get('probabilites', {})
+            alerte      = data.get('niveau_alerte', 'OK')
+            interpreta  = data.get('interpretation', '')
+            modele_info = data.get('modele', '')
+        else:
+            err_msg = f"API erreur {resp.status_code}"
+    except Exception as e:
+        err_msg = f"API indisponible — lancez l'API sur le port 8000 ({type(e).__name__})"
+
+    # ── Couleurs ─────────────────────────────────────────────
+    alerte_color = {
+        'CRITICAL': theme['critical'],
+        'WARNING' : theme['warning'],
+        'OK'      : theme['ok'],
+    }.get(alerte, theme['text_muted'])
+    alerte_bg = _rgba(alerte_color, 0.12)
+
+    # ── Graphique probabilités ────────────────────────────────
+    if api_ok and probas:
+        classes = ['Normal', 'Risque', 'Critique']
+        vals    = [probas.get(c, 0) for c in classes]
+        bar_colors = [theme['ok'], theme['warning'], theme['critical']]
+
+        fig_proba = go.Figure()
+        for c, v, col in zip(classes, vals, bar_colors):
+            fig_proba.add_trace(go.Bar(
+                name=c, x=[c], y=[v * 100],
+                marker_color=col,
+                marker_opacity=0.8,
+                text=[f'{v*100:.1f}%'],
+                textposition='outside',
+                textfont={'size': 11, 'color': col},
+            ))
+        layout_p = _plot_layout(theme, title='Probabilités par classe (%)', height=240)
+        layout_p['margin']      = dict(l=20, r=20, t=50, b=30)
+        layout_p['showlegend'] = False
+        layout_p['yaxis']      = {**_axis(theme, '%'), 'range': [0, 115]}
+        layout_p['xaxis']      = _axis(theme)
+        layout_p['barmode']    = 'group'
+        fig_proba.update_layout(layout_p)
+        proba_el = dcc.Graph(figure=fig_proba, config={'displayModeBar': False})
+    else:
+        proba_el = html.Div(
+            err_msg or 'Données indisponibles',
+            style={'fontSize': '12px', 'color': theme['critical'],
+                   'padding': '40px 20px', 'textAlign': 'center',
+                   'background': _rgba(theme['critical'], 0.06),
+                   'borderRadius': '12px', 'fontStyle': 'italic'},
+        )
+
+    # ── Carte résultat ─────────────────────────────────────────
+    result_card = html.Div(style={
+        'display': 'flex', 'flexDirection': 'column', 'gap': '14px',
+        'padding': '20px', 'background': theme['bg_surface'],
+        'borderRadius': '16px', 'border': f"1px solid {theme['border']}",
+    }, children=[
+        # Badge alerte
+        html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '8px'}, children=[
+            html.Span('●', style={'color': alerte_color, 'fontSize': '10px'}),
+            html.Span(alerte, style={
+                'fontSize': '11px', 'fontWeight': '800', 'color': alerte_color,
+                'padding': '3px 10px', 'borderRadius': '999px',
+                'background': alerte_bg, 'border': f'1px solid {_rgba(alerte_color, 0.3)}',
+            }),
+        ]) if api_ok else html.Div(),
+
+        # Classe prédite
+        html.Div(style={
+            'background': theme['bg_card'], 'borderRadius': '16px',
+            'padding': '20px', 'textAlign': 'center',
+            'border': f"2px solid {alerte_color if api_ok else theme['border']}",
+        }, children=[
+            html.Div('Classe prédite', style={'fontSize': '10px', 'color': theme['text_muted'],
+                                              'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(nom if api_ok else '—', style={
+                'fontSize': '28px', 'fontWeight': '900',
+                'color': alerte_color if api_ok else theme['text_muted'],
+                'marginTop': '6px',
+            }),
+            html.Div(
+                f'label {label}' if api_ok else '',
+                style={'fontSize': '10px', 'color': theme['text_muted'], 'marginTop': '4px'},
+            ),
+        ]) if api_ok else html.Div(
+            err_msg,
+            style={'fontSize': '12px', 'color': theme['critical'],
+                   'fontStyle': 'italic', 'padding': '10px'},
+        ),
+
+        # Interprétation
+        html.Div(interpreta if api_ok else '', style={
+            'fontSize': '12px', 'color': theme['text_secondary'],
+            'lineHeight': '1.6', 'fontStyle': 'italic',
+        }),
+    ])
+
+    # ── Données d'entrée ──────────────────────────────────────
+    def chip(label, value, highlight=False):
+        return html.Div(style={
+            'padding': '8px 12px', 'background': theme['bg_surface'],
+            'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
+            'borderLeft': f"3px solid {theme['accent_cyan']}" if highlight else '',
+        }, children=[
+            html.Div(label, style={'fontSize': '9px', 'color': theme['text_muted'],
+                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(str(value), style={'fontSize': '13px', 'fontWeight': '700',
+                                        'color': theme['accent_cyan'] if highlight else theme['text_primary']}),
+        ])
+
+    input_row = html.Div(style={
+        'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 'gap': '8px',
+    }, children=[
+        chip('Delta thermique', f"{payload['temp_process_delta']:.1f} K", highlight=True),
+        chip('Temp process',    f"{payload['temp_process_c']:.1f} °C"),
+        chip('TRS',             f"{payload['TRS']*100:.1f}%"),
+        chip('Usure outil',     f"{payload['usure_cumulee_pct']:.1f}%"),
+        chip('Couple',          f"{payload['couple_nm']:.1f} N·m"),
+        chip('Vitesse',         f"{int(payload['vitesse_rotation_rpm'])} rpm"),
+        chip('Stabilité',       f"{payload['indice_stabilite_process']:.2f}"),
+        chip('Pannes 7j',       int(payload['nb_pannes_7j'])),
+    ])
+
+    return html.Div(children=[
+        html.Div(className='panel', style={'marginBottom': '14px'}, children=[
+            html.Div(className='panel-head', children=[
+                html.Div(children=[
+                    html.Div('AI · Maintenance Prédictive — Risque Thermique', className='panel-title'),
+                    html.Div(
+                        f'Classification {modele_info}' if api_ok
+                        else 'Classification · XGBoost + SMOTE · Balanced Accuracy=0.417',
+                        className='panel-subtitle',
+                    ),
+                ]),
+                html.Div('MSPR 841', style={
+                    'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
+                    'borderRadius': '999px', 'color': theme['accent_purple'],
+                    'background': _rgba(theme['accent_purple'], 0.10),
+                    'border': f"1px solid {_rgba(theme['accent_purple'], 0.25)}",
+                }),
+            ]),
+            html.Div(style={
+                'display': 'grid', 'gridTemplateColumns': '1fr 1fr',
+                'gap': '16px', 'padding': '16px',
+            }, children=[
+                proba_el,
+                result_card,
+            ]),
+        ]),
+        html.Div(className='panel', style={'padding': '16px'}, children=[
+            html.Div('Données d\'entrée · Session courante', className='panel-title',
+                     style={'marginBottom': '12px'}),
+            input_row,
+            html.Div(
+                '⚠ Mode single-session : features de lag/rolling approximées. '
+                'Modèle entraîné sur données simulées — recalibration terrain recommandée.',
+                style={'fontSize': '10px', 'color': theme['text_muted'],
+                       'marginTop': '10px', 'fontStyle': 'italic'},
+            ),
+        ]),
+    ])
+
+
+# ─────────────────────────────────────────────────────────────
 # LAYOUT
 # ─────────────────────────────────────────────────────────────
 app.layout = html.Div(
@@ -917,14 +1122,16 @@ app.layout = html.Div(
     Input('tab-btn-maintenance-B', 'n_clicks'),
     Input('tab-btn-quality-B',     'n_clicks'),
     Input('tab-btn-alerts-B',      'n_clicks'),
+    Input('tab-btn-ai-B',          'n_clicks'),
     prevent_initial_call=True,
 )
-def switch_tab_B(n1, n2, n3, n4):
+def switch_tab_B(n1, n2, n3, n4, n5):
     mapping = {
         'tab-btn-overview-B'    : 'overview',
         'tab-btn-maintenance-B' : 'maintenance',
         'tab-btn-quality-B'     : 'quality',
         'tab-btn-alerts-B'      : 'alerts',
+        'tab-btn-ai-B'          : 'ai',
     }
     return mapping.get(ctx.triggered_id, 'overview')
 
@@ -957,10 +1164,11 @@ def update_tab_bar_B(active_tab):
         'top'          : '57px',
         'zIndex'       : '15',
     }, children=[
-        tab_btn('Overview',    'overview',    'tab-btn-overview-B'),
-        tab_btn('Maintenance', 'maintenance', 'tab-btn-maintenance-B'),
-        tab_btn('Quality',     'quality',     'tab-btn-quality-B'),
-        tab_btn('Alerts',      'alerts',      'tab-btn-alerts-B'),
+        tab_btn('Overview',       'overview',    'tab-btn-overview-B'),
+        tab_btn('Maintenance',    'maintenance', 'tab-btn-maintenance-B'),
+        tab_btn('Quality',        'quality',     'tab-btn-quality-B'),
+        tab_btn('Alerts',         'alerts',      'tab-btn-alerts-B'),
+        tab_btn('AI Predictions', 'ai',          'tab-btn-ai-B'),
     ])
 
 
@@ -989,6 +1197,8 @@ def update_page_B(n, active_tab):
         tab_content = build_tab_quality(state, theme)
     elif active_tab == 'alerts':
         tab_content = build_tab_alerts(theme)
+    elif active_tab == 'ai':
+        tab_content = build_tab_ai_B(state, theme)
     else:
         tab_content = build_tab_overview(state, aggs, theme)
 

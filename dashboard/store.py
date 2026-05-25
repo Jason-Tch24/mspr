@@ -226,6 +226,14 @@ ALERT_PERSISTENCE: dict[str, dict[str, int]] = {
 }
 
 # ─────────────────────────────────────────────────────────────
+# INJECTION DE PANNES (mode démonstration)
+# Overrides appliqués par-dessus les données du simulateur.
+# Le simulateur continue de tourner — seuls les champs listés
+# ici remplacent les valeurs jusqu'à un appel clear_fault().
+# ─────────────────────────────────────────────────────────────
+_FAULT_INJECTIONS: dict[str, dict] = {usine: {} for usine in USINES}
+
+# ─────────────────────────────────────────────────────────────
 # FONCTIONS D'ACCÈS THREAD-SAFE
 # Chaque fonction acquiert le bon verrou, opère, libère.
 # Le reste du système utilise ces fonctions, jamais les
@@ -244,11 +252,30 @@ def update_current_state(usine_id: str, session: dict) -> None:
 def get_current_state(usine_id: str) -> dict:
     """
     Retourne une copie de l'état courant d'une usine.
-    Copie défensive : le dashboard travaille sur une snapshot,
-    pas sur la structure live.
+    Applique les overrides de fault injection par-dessus les données simulateur.
     """
     with _lock_current:
-        return CURRENT_STATE[usine_id].copy()
+        state = CURRENT_STATE[usine_id].copy()
+        state.update(_FAULT_INJECTIONS[usine_id])
+        return state
+
+
+def inject_fault(usine_id: str, overrides: dict) -> None:
+    """Injecte des valeurs de panne par-dessus le simulateur."""
+    with _lock_current:
+        _FAULT_INJECTIONS[usine_id].update(overrides)
+
+
+def clear_fault(usine_id: str) -> None:
+    """Supprime toutes les injections — le simulateur reprend normalement."""
+    with _lock_current:
+        _FAULT_INJECTIONS[usine_id].clear()
+
+
+def get_fault_injection(usine_id: str) -> dict:
+    """Retourne les overrides actifs (vide = aucune injection)."""
+    with _lock_current:
+        return _FAULT_INJECTIONS[usine_id].copy()
 
 
 def get_all_current_states() -> dict:

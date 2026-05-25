@@ -901,82 +901,52 @@ def build_tab_alerts(theme: dict) -> html.Div:
 # ─────────────────────────────────────────────────────────────
 _AI_API_URL_B = 'http://localhost:8000/predict/risque-thermique'
 
-def build_tab_ai_B(state: dict, theme: dict, demo_data: dict | None = None) -> html.Div:
+_FAULT_PRESETS_B = {
+    'surchauffe' : {
+        'temp_process_delta': 20.0, 'nb_pannes_7j': 8,
+        'indice_stabilite_process': 0.35, 'usure_cumulee_pct': 72.0,
+    },
+    'panne_imminente': {
+        'temp_process_delta': 26.0, 'nb_pannes_7j': 15,
+        'panne_thermique': 1,       'usure_cumulee_pct': 88.0,
+        'indice_stabilite_process': 0.15,
+    },
+}
+
+def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) -> html.Div:
     """Onglet IA : appelle l'API FastAPI et affiche la classification thermique."""
 
-    # ── Résolution des valeurs (démo ou simulateur) ──────────
-    d      = demo_data or {}
-    active = d.get('active', False)
+    # ── Panneau injection de panne ────────────────────────────
+    fault_active = active_fault is not None
+    status_color = theme['critical'] if fault_active else theme['ok']
+    status_text  = f'● PANNE ACTIVE : {active_fault}' if fault_active else '○ Simulateur en cours'
 
-    delta     = d.get('delta',     state.get('temp_process_delta', 10.0)) if active else state.get('temp_process_delta', 10.0)
-    nb_pannes = int(d.get('nb_pannes', state.get('nb_pannes_7j', 0)))     if active else int(state.get('nb_pannes_7j', 0))
-    usure     = d.get('usure',     state.get('usure_cumulee_pct', 42.0))  if active else state.get('usure_cumulee_pct', 42.0)
-
-    # ── Panneau Démonstration ─────────────────────────────────
-    demo_color  = theme.get('accent_purple', '#8b5cf6')
-    toggle_bg   = _rgba(demo_color, 0.18) if active else _rgba(theme['text_muted'], 0.10)
-    toggle_text = '● DÉMO ACTIF' if active else '○ Mode Simulateur'
-    toggle_col  = demo_color if active else theme['text_muted']
-
-    def _slider(label, sid, mn, mx, step, val, fmt='{:.1f}'):
-        return html.Div(style={'display': 'flex', 'flexDirection': 'column', 'gap': '4px'}, children=[
-            html.Div(style={'display': 'flex', 'justifyContent': 'space-between'}, children=[
-                html.Span(label, style={'fontSize': '11px', 'color': theme['text_secondary'], 'fontWeight': '600'}),
-                html.Span(fmt.format(val), style={'fontSize': '11px', 'color': demo_color, 'fontWeight': '700'}),
-            ]),
-            dcc.Slider(
-                id=sid, min=mn, max=mx, step=step, value=val,
-                marks=None, tooltip={'always_visible': False},
-                updatemode='drag',
-            ),
-        ])
-
-    def _preset_btn(label, bid, color):
+    def _fault_btn(label, bid, color):
         return html.Button(label, id=bid, n_clicks=0, style={
-            'fontSize': '11px', 'fontWeight': '700', 'padding': '6px 14px',
+            'fontSize': '11px', 'fontWeight': '700', 'padding': '6px 16px',
             'borderRadius': '999px', 'border': f'1px solid {_rgba(color, 0.4)}',
             'background': _rgba(color, 0.12), 'color': color, 'cursor': 'pointer',
         })
 
-    demo_panel = html.Div(className='panel', style={'marginBottom': '14px'}, children=[
+    fault_panel = html.Div(className='panel', style={'marginBottom': '14px'}, children=[
         html.Div(className='panel-head', children=[
             html.Div(children=[
-                html.Div('Mode Démonstration', className='panel-title'),
-                html.Div('Simulation manuelle de pannes thermiques en temps réel',
-                         className='panel-subtitle'),
+                html.Div('Injection de panne · Démonstration', className='panel-title'),
+                html.Div(status_text, style={
+                    'fontSize': '11px', 'fontWeight': '700',
+                    'color': status_color, 'marginTop': '2px',
+                }),
             ]),
-            html.Button(
-                toggle_text, id='demo-toggle-B', n_clicks=0,
-                style={
-                    'fontSize': '11px', 'fontWeight': '700', 'padding': '5px 16px',
-                    'borderRadius': '999px', 'border': f'1px solid {_rgba(toggle_col, 0.4)}',
-                    'background': toggle_bg, 'color': toggle_col, 'cursor': 'pointer',
-                },
-            ),
         ]),
-        html.Div(style={'padding': '16px', 'display': 'flex', 'flexDirection': 'column', 'gap': '14px'}, children=[
-            # Scénarios prédéfinis
-            html.Div(style={'display': 'flex', 'gap': '8px', 'flexWrap': 'wrap'}, children=[
-                html.Span('Scénarios :', style={'fontSize': '11px', 'color': theme['text_muted'],
-                                                'alignSelf': 'center', 'fontWeight': '600'}),
-                _preset_btn('Normal',            'demo-btn-normal-B',   theme['ok']),
-                _preset_btn('Surchauffe',        'demo-btn-warning-B',  theme['warning']),
-                _preset_btn('🔥 PANNE IMMINENTE', 'demo-btn-critique-B', theme['critical']),
-            ]),
-            # Sliders
-            html.Div(style={
-                'display': 'grid', 'gridTemplateColumns': '1fr 1fr 1fr', 'gap': '16px',
-                'opacity': '1' if active else '0.45',
-                'pointerEvents': 'auto' if active else 'none',
-            }, children=[
-                _slider('Delta thermique (K)', 'demo-slider-delta-B',    5,  30, 0.5, delta,     '{:.1f} K'),
-                _slider('Pannes 7 jours',      'demo-slider-pannes-B',   0,  20, 1,   nb_pannes, '{:.0f}'),
-                _slider('Usure outil (%)',      'demo-slider-usure-B',    0, 100, 1,   usure,     '{:.0f}%'),
-            ]),
+        html.Div(style={'padding': '12px 16px', 'display': 'flex', 'gap': '10px',
+                        'flexWrap': 'wrap', 'alignItems': 'center'}, children=[
+            _fault_btn('Surchauffe (delta 20K)',    'fault-btn-surchauffe-B',  theme['warning']),
+            _fault_btn('🔥 Panne imminente',        'fault-btn-panne-B',       theme['critical']),
+            _fault_btn('✓ Reprendre simulateur',    'fault-btn-clear-B',       theme['ok']),
             html.Div(
-                '☝ Active le mode démo puis déplace les curseurs — la prédiction se met à jour en temps réel' if not active
-                else '✓ Mode démo actif — les curseurs remplacent les données du simulateur',
-                style={'fontSize': '10px', 'color': toggle_col, 'fontStyle': 'italic'},
+                'Le simulateur continue — les champs injectés remplacent ses valeurs jusqu\'à "Reprendre".',
+                style={'fontSize': '10px', 'color': theme['text_muted'],
+                       'fontStyle': 'italic', 'flexBasis': '100%'},
             ),
         ]),
     ])
@@ -992,7 +962,7 @@ def build_tab_ai_B(state: dict, theme: dict, demo_data: dict | None = None) -> h
     err_msg    = ''
 
     payload = {
-        'temp_process_delta'      : delta,
+        'temp_process_delta'      : state.get('temp_process_delta', 10.0),
         'TRS'                     : state.get('TRS', 0.9),
         'taux_rebut'              : state.get('taux_rebut', 0.03),
         'disponibilite'           : state.get('disponibilite', 1.0),
@@ -1000,9 +970,9 @@ def build_tab_ai_B(state: dict, theme: dict, demo_data: dict | None = None) -> h
         'consommation_kwh'        : state.get('consommation_kwh', 3.5),
         'temps_cycle_min'         : state.get('temps_cycle_min', 40.0),
         'derive_cycle_pct'        : state.get('derive_cycle_pct', 0.0),
-        'nb_pannes_7j'            : nb_pannes,
+        'nb_pannes_7j'            : int(state.get('nb_pannes_7j', 0)),
         'temp_process_c'          : state.get('temp_process_c', 34.0),
-        'usure_cumulee_pct'       : usure,
+        'usure_cumulee_pct'       : state.get('usure_cumulee_pct', 42.0),
         'couple_nm'               : state.get('couple_nm', 45.0),
         'vitesse_rotation_rpm'    : state.get('vitesse_rotation_rpm', 1530),
         'indice_stabilite_process': state.get('indice_stabilite_process', 0.9),
@@ -1139,18 +1109,18 @@ def build_tab_ai_B(state: dict, theme: dict, demo_data: dict | None = None) -> h
     ])
 
     source_badge = html.Div(
-        '🎮 DÉMO' if active else '📡 Simulateur',
+        '🔴 PANNE INJECTÉE' if fault_active else '📡 Simulateur',
         style={
             'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
             'borderRadius': '999px',
-            'color': demo_color if active else theme['text_muted'],
-            'background': _rgba(demo_color if active else theme['text_muted'], 0.10),
-            'border': f"1px solid {_rgba(demo_color if active else theme['text_muted'], 0.25)}",
+            'color': theme['critical'] if fault_active else theme['text_muted'],
+            'background': _rgba(theme['critical'] if fault_active else theme['text_muted'], 0.10),
+            'border': f"1px solid {_rgba(theme['critical'] if fault_active else theme['text_muted'], 0.25)}",
         },
     )
 
     return html.Div(children=[
-        demo_panel,
+        fault_panel,
         html.Div(className='panel', style={'marginBottom': '14px'}, children=[
             html.Div(className='panel-head', children=[
                 html.Div(children=[
@@ -1202,9 +1172,7 @@ app.layout = html.Div(
     children=[
         dcc.Interval(id='interval-B', interval=1000, n_intervals=0),
         dcc.Store(id='tab-store-B', data='overview'),
-        dcc.Store(id='demo-store-B', data={
-            'active': False, 'delta': 9.5, 'nb_pannes': 0, 'usure': 42.0,
-        }),
+        dcc.Store(id='fault-store-B', data=None),  # nom de la panne active ou None
         html.Div(id='page-content-B'),
         html.Div(id='tab-bar-container-B'),
     ]
@@ -1273,9 +1241,9 @@ def update_tab_bar_B(active_tab):
     Output('page-content-B', 'children'),
     Input('interval-B', 'n_intervals'),
     State('tab-store-B', 'data'),
-    State('demo-store-B', 'data'),
+    State('fault-store-B', 'data'),
 )
-def update_page_B(n, active_tab, demo_data):
+def update_page_B(n, active_tab, active_fault):
     ensure_simulator_started()
     theme      = _soft_theme(DEFAULT_THEME_MODE)
     state      = store.get_current_state(USINE_ID)
@@ -1296,7 +1264,7 @@ def update_page_B(n, active_tab, demo_data):
     elif active_tab == 'alerts':
         tab_content = build_tab_alerts(theme)
     elif active_tab == 'ai':
-        tab_content = build_tab_ai_B(state, theme, demo_data or {})
+        tab_content = build_tab_ai_B(state, theme, active_fault)
     else:
         tab_content = build_tab_overview(state, aggs, theme)
 
@@ -1323,43 +1291,26 @@ def update_page_B(n, active_tab, demo_data):
 
 
 # ─────────────────────────────────────────────────────────────
-# CALLBACK DÉMO — mise à jour du store via toggle / presets / sliders
+# CALLBACK INJECTION DE PANNE — Usine B
 # ─────────────────────────────────────────────────────────────
 @app.callback(
-    Output('demo-store-B', 'data'),
-    Input('demo-toggle-B',       'n_clicks'),
-    Input('demo-btn-normal-B',   'n_clicks'),
-    Input('demo-btn-warning-B',  'n_clicks'),
-    Input('demo-btn-critique-B', 'n_clicks'),
-    Input('demo-slider-delta-B',  'value'),
-    Input('demo-slider-pannes-B', 'value'),
-    Input('demo-slider-usure-B',  'value'),
-    State('demo-store-B', 'data'),
+    Output('fault-store-B', 'data'),
+    Input('fault-btn-surchauffe-B', 'n_clicks'),
+    Input('fault-btn-panne-B',      'n_clicks'),
+    Input('fault-btn-clear-B',      'n_clicks'),
     prevent_initial_call=True,
 )
-def update_demo_store_B(toggle, normal, warning, critique, delta, nb_pannes, usure, current):
+def handle_fault_B(n_surch, n_panne, n_clear):
     triggered = ctx.triggered_id
-    d = dict(current) if current else {'active': False, 'delta': 9.5, 'nb_pannes': 0, 'usure': 42.0}
-
-    if triggered == 'demo-toggle-B':
-        d['active'] = not d.get('active', False)
-
-    elif triggered == 'demo-btn-normal-B':
-        d.update({'active': True, 'delta': 8.0,  'nb_pannes': 0,  'usure': 30.0})
-
-    elif triggered == 'demo-btn-warning-B':
-        d.update({'active': True, 'delta': 16.0, 'nb_pannes': 5,  'usure': 65.0})
-
-    elif triggered == 'demo-btn-critique-B':
-        d.update({'active': True, 'delta': 24.0, 'nb_pannes': 12, 'usure': 88.0})
-
-    elif triggered in ('demo-slider-delta-B', 'demo-slider-pannes-B', 'demo-slider-usure-B'):
-        d['active'] = True
-        if delta     is not None: d['delta']     = float(delta)
-        if nb_pannes is not None: d['nb_pannes'] = int(nb_pannes)
-        if usure     is not None: d['usure']     = float(usure)
-
-    return d
+    if triggered == 'fault-btn-surchauffe-B':
+        store.inject_fault(USINE_ID, _FAULT_PRESETS_B['surchauffe'])
+        return 'Surchauffe (delta 20K)'
+    if triggered == 'fault-btn-panne-B':
+        store.inject_fault(USINE_ID, _FAULT_PRESETS_B['panne_imminente'])
+        return 'Panne thermique imminente'
+    # fault-btn-clear-B
+    store.clear_fault(USINE_ID)
+    return None
 
 
 if __name__ == '__main__':

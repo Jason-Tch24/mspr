@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────
+# docker-compose.yml — Stack complète MECHA (MSPR 831 + 841)
+#
+# Lancer toute la stack :
+#   docker compose up -d --build
+#
+# Lancer un service seul (ex: groupe) :
+#   docker compose up dashboard_groupe
+#
+# Accès après démarrage :
+#   API FastAPI (docs)   → http://localhost:8000/docs
+#   Dashboard Groupe     → http://localhost:8050
+#   Dashboard Usine A    → http://localhost:8051
+#   Dashboard Usine B    → http://localhost:8052
+#   Dashboard Usine C    → http://localhost:8053
+#
+# NOTA : les dashboards usine démarrent leur propre simulateur
+# indépendant (processus séparés). Les liens "Open dashboard"
+# du groupe pointent vers localhost:<port> — ils fonctionnent
+# car les ports sont mappés 1:1 vers l'hôte.
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  # ── API de scoring IA (MSPR 841) ────────────────────────────
+  api:
+    build:
+      context: ./mspr841/api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Dashboard Groupe (vue consolidée 3 usines) ───────────────
+  dashboard_groupe:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    environment:
+      - APP_MODULE=app_groupe
+    ports:
+      - "8050:8050"
+    restart: unless-stopped
+
+  # ── Dashboard Usine A — Lyon (usure outil progressive) ──────
+  dashboard_usine_a:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    environment:
+      - APP_MODULE=app_usine_A
+    ports:
+      - "8051:8051"
+    restart: unless-stopped
+
+  # ── Dashboard Usine B — Bordeaux (pannes thermiques) ────────
+  dashboard_usine_b:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    environment:
+      - APP_MODULE=app_usine_B
+    ports:
+      - "8052:8052"
+    restart: unless-stopped
+
+  # ── Dashboard Usine C — Toulouse (instabilité process) ──────
+  dashboard_usine_c:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    environment:
+      - APP_MODULE=app_usine_C
+    ports:
+      - "8053:8053"
+    restart: unless-stopped

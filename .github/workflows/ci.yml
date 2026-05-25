@@ -1,0 +1,96 @@
+name: CI
+
+# Déclenché à chaque push ou pull request sur main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 1 — Lint
+  # Vérifie les erreurs de syntaxe Python et les noms indéfinis.
+  # On cible uniquement les codes E9 (SyntaxError) et F (pyflakes)
+  # pour ne pas rejeter le style d'alignement existant du projet.
+  # ────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (flake8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Lint — dashboard/
+        run: |
+          flake8 dashboard/ \
+            --select=E9,F \
+            --extend-ignore=F401 \
+            --max-line-length=120
+
+      - name: Lint — mspr841/api/
+        run: |
+          flake8 mspr841/api/ \
+            --select=E9,F \
+            --extend-ignore=F401 \
+            --max-line-length=120
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 2 — Tests unitaires
+  # Installe les dépendances dashboard, puis lance pytest.
+  # conftest.py ajoute dashboard/ au sys.path automatiquement.
+  # test_health.py fournit les items pytest formels.
+  # Les autres test_*.py s'exécutent en tant que scripts lors de
+  # la collection (leurs assertions valident le comportement).
+  # ────────────────────────────────────────────────────────────
+  test:
+    name: Tests unitaires (pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dashboard dependencies
+        run: pip install -r dashboard/requirements.txt
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run pytest
+        run: pytest
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 3 — Build des images Docker
+  # Vérifie que les deux Dockerfiles construisent sans erreur.
+  # Aucun push vers un registry (CI uniquement).
+  # ────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build — image API (mspr841/api)
+        run: docker build -t mecha-api:ci ./mspr841/api
+
+      - name: Build — image Dashboard (contexte racine)
+        # Le contexte est . car le Dockerfile référence dashboard/ ET data/
+        run: docker build -f dashboard/Dockerfile -t mecha-dashboard:ci .

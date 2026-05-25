@@ -1,0 +1,37 @@
+# Contrôle de version
+.git
+.gitignore
+
+# Cache Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Notebooks et fichiers de développement
+# (non nécessaires dans les images de production)
+notebooks/
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Modèles ML sérialisés (générés localement, non versionnés)
+mspr841/api/models/*.joblib
+mspr841/api/models/*.pkl
+
+# Logs
+*.log
+logs/
+
+# Variables d'environnement
+.env
+.env.local

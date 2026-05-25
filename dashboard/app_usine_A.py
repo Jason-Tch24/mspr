@@ -12,6 +12,7 @@ from datetime import datetime
 
 import dash
 from dash import dcc, html, Input, Output, State, ctx
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import requests
 
@@ -893,8 +894,86 @@ def build_tab_alerts(theme: dict) -> html.Div:
 # ─────────────────────────────────────────────────────────────
 _AI_API_URL_A = 'http://localhost:8000/predict/rul'
 
-def build_tab_ai_A(state: dict, theme: dict) -> html.Div:
+def build_tab_ai_A(state: dict, theme: dict, demo_data: dict | None = None) -> html.Div:
     """Onglet IA : appelle l'API FastAPI et affiche la prédiction RUL."""
+
+    # ── Résolution des valeurs (démo ou simulateur) ──────────
+    d      = demo_data or {}
+    active = d.get('active', False)
+
+    usure  = d.get('usure',  state.get('usure_cumulee_pct', 50.0)) if active else state.get('usure_cumulee_pct', 50.0)
+    trs    = d.get('TRS',    state.get('TRS', 0.9))                 if active else state.get('TRS', 0.9)
+    derive = d.get('derive', state.get('derive_cycle_pct', 0.0))    if active else state.get('derive_cycle_pct', 0.0)
+
+    # ── Panneau Démonstration ─────────────────────────────────
+    demo_color  = theme.get('accent_purple', '#8b5cf6')
+    toggle_bg   = _rgba(demo_color, 0.18) if active else _rgba(theme['text_muted'], 0.10)
+    toggle_text = '● DÉMO ACTIF' if active else '○ Mode Simulateur'
+    toggle_col  = demo_color if active else theme['text_muted']
+
+    def _slider(label, sid, mn, mx, step, val, fmt='{:.0f}'):
+        return html.Div(style={'display': 'flex', 'flexDirection': 'column', 'gap': '4px'}, children=[
+            html.Div(style={'display': 'flex', 'justifyContent': 'space-between'}, children=[
+                html.Span(label, style={'fontSize': '11px', 'color': theme['text_secondary'], 'fontWeight': '600'}),
+                html.Span(fmt.format(val), style={'fontSize': '11px', 'color': demo_color, 'fontWeight': '700'}),
+            ]),
+            dcc.Slider(
+                id=sid, min=mn, max=mx, step=step, value=val,
+                marks=None, tooltip={'always_visible': False},
+                updatemode='drag',
+                styles={'container': {'padding': '4px 0'}},
+            ),
+        ])
+
+    def _preset_btn(label, bid, color):
+        return html.Button(label, id=bid, n_clicks=0, style={
+            'fontSize': '11px', 'fontWeight': '700', 'padding': '6px 14px',
+            'borderRadius': '999px', 'border': f'1px solid {_rgba(color, 0.4)}',
+            'background': _rgba(color, 0.12), 'color': color, 'cursor': 'pointer',
+        })
+
+    demo_panel = html.Div(className='panel', style={'marginBottom': '14px'}, children=[
+        html.Div(className='panel-head', children=[
+            html.Div(children=[
+                html.Div('Mode Démonstration', className='panel-title'),
+                html.Div('Contrôle manuel des capteurs pour simulation de pannes',
+                         className='panel-subtitle'),
+            ]),
+            html.Button(
+                toggle_text, id='demo-toggle-A', n_clicks=0,
+                style={
+                    'fontSize': '11px', 'fontWeight': '700', 'padding': '5px 16px',
+                    'borderRadius': '999px', 'border': f'1px solid {_rgba(toggle_col, 0.4)}',
+                    'background': toggle_bg, 'color': toggle_col, 'cursor': 'pointer',
+                },
+            ),
+        ]),
+        html.Div(style={'padding': '16px', 'display': 'flex', 'flexDirection': 'column', 'gap': '14px'}, children=[
+            # Scénarios prédéfinis
+            html.Div(style={'display': 'flex', 'gap': '8px', 'flexWrap': 'wrap'}, children=[
+                html.Span('Scénarios :', style={'fontSize': '11px', 'color': theme['text_muted'],
+                                                'alignSelf': 'center', 'fontWeight': '600'}),
+                _preset_btn('Outil neuf',        'demo-btn-neuf-A',     theme['ok']),
+                _preset_btn('Approche limite',   'demo-btn-warning-A',  theme['warning']),
+                _preset_btn('🚨 CRITIQUE',        'demo-btn-critique-A', theme['critical']),
+            ]),
+            # Sliders
+            html.Div(style={
+                'display': 'grid', 'gridTemplateColumns': '1fr 1fr 1fr', 'gap': '16px',
+                'opacity': '1' if active else '0.45',
+                'pointerEvents': 'auto' if active else 'none',
+            }, children=[
+                _slider('Usure outil (%)',   'demo-slider-usure-A',  0,   100, 1,    usure,  '{:.0f}%'),
+                _slider('TRS',               'demo-slider-trs-A',    0.5,   1, 0.01, trs,    '{:.2f}'),
+                _slider('Dérive cycle (%)',  'demo-slider-derive-A', 0,    50, 0.5,  derive, '{:.1f}%'),
+            ]),
+            html.Div(
+                '☝ Active le mode démo puis déplace les curseurs — la prédiction se met à jour en temps réel' if not active
+                else '✓ Mode démo actif — les curseurs remplacent les données du simulateur',
+                style={'fontSize': '10px', 'color': toggle_col, 'fontStyle': 'italic'},
+            ),
+        ]),
+    ])
 
     # ── Appel API ────────────────────────────────────────────
     api_ok      = False
@@ -906,10 +985,10 @@ def build_tab_ai_A(state: dict, theme: dict) -> html.Div:
     err_msg     = ''
 
     payload = {
-        'usure_cumulee_pct'  : state.get('usure_cumulee_pct', 50.0),
-        'TRS'                : state.get('TRS', 0.9),
+        'usure_cumulee_pct'  : usure,
+        'TRS'                : trs,
         'temps_cycle_min'    : state.get('temps_cycle_min', 45.0),
-        'derive_cycle_pct'   : state.get('derive_cycle_pct', 0.0),
+        'derive_cycle_pct'   : derive,
         'disponibilite'      : state.get('disponibilite', 1.0),
         'performance'        : state.get('performance', 1.0),
         'qualite'            : state.get('qualite', 1.0),
@@ -1086,23 +1165,38 @@ def build_tab_ai_A(state: dict, theme: dict) -> html.Div:
         ]),
     ])
 
+    source_badge = html.Div(
+        '🎮 DÉMO' if active else '📡 Simulateur',
+        style={
+            'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
+            'borderRadius': '999px',
+            'color': demo_color if active else theme['text_muted'],
+            'background': _rgba(demo_color if active else theme['text_muted'], 0.10),
+            'border': f"1px solid {_rgba(demo_color if active else theme['text_muted'], 0.25)}",
+        },
+    )
+
     return html.Div(children=[
+        demo_panel,
         html.Div(className='panel', style={'marginBottom': '14px'}, children=[
             html.Div(className='panel-head', children=[
                 html.Div(children=[
                     html.Div('AI · Maintenance Prédictive — RUL Outil', className='panel-title'),
                     html.Div(
                         f'Remaining Useful Life · {modele_info}' if api_ok
-                        else 'Remaining Useful Life · RandomForestRegressor · R²=0.996',
+                        else 'Remaining Useful Life · Ridge · R²=0.996',
                         className='panel-subtitle',
                     ),
                 ]),
-                html.Div('MSPR 841', style={
-                    'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
-                    'borderRadius': '999px', 'color': theme['accent_purple'],
-                    'background': _rgba(theme['accent_purple'], 0.10),
-                    'border': f"1px solid {_rgba(theme['accent_purple'], 0.25)}",
-                }),
+                html.Div(style={'display': 'flex', 'gap': '8px', 'alignItems': 'center'}, children=[
+                    source_badge,
+                    html.Div('MSPR 841', style={
+                        'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
+                        'borderRadius': '999px', 'color': theme['accent_purple'],
+                        'background': _rgba(theme['accent_purple'], 0.10),
+                        'border': f"1px solid {_rgba(theme['accent_purple'], 0.25)}",
+                    }),
+                ]),
             ]),
             html.Div(style={
                 'display': 'grid', 'gridTemplateColumns': '1fr 1fr',
@@ -1135,6 +1229,9 @@ app.layout = html.Div(
     children=[
         dcc.Interval(id='interval-A', interval=1000, n_intervals=0),
         dcc.Store(id='tab-store-A', data='overview'),  # ← persistant, jamais recréé
+        dcc.Store(id='demo-store-A', data={            # ← état du mode démonstration
+            'active': False, 'usure': 50.0, 'TRS': 0.9, 'derive': 0.0,
+        }),
         html.Div(id='page-content-A'),
         html.Div(id='tab-bar-container-A'),             # ← tab bar dans son propre div
     ]
@@ -1209,8 +1306,9 @@ def update_tab_bar_A(active_tab):
     Output('page-content-A', 'children'),
     Input('interval-A', 'n_intervals'),
     State('tab-store-A', 'data'),        # ← State, pas Input
+    State('demo-store-A', 'data'),
 )
-def update_page_A(n, active_tab):
+def update_page_A(n, active_tab, demo_data):
     ensure_simulator_started()
     theme      = _soft_theme(DEFAULT_THEME_MODE)
     state      = store.get_current_state(USINE_ID)
@@ -1231,7 +1329,7 @@ def update_page_A(n, active_tab):
     elif active_tab == 'alerts':
         tab_content = build_tab_alerts(theme)
     elif active_tab == 'ai':
-        tab_content = build_tab_ai_A(state, theme)
+        tab_content = build_tab_ai_A(state, theme, demo_data or {})
     else:
         tab_content = build_tab_overview(state, aggs, theme)
 
@@ -1255,6 +1353,48 @@ def update_page_A(n, active_tab):
             ]),
         ])],
     )
+
+# ─────────────────────────────────────────────────────────────
+# CALLBACK DÉMO — mise à jour du store via toggle / presets / sliders
+# Les IDs sliders n'existent que si l'onglet AI est actif.
+# suppress_callback_exceptions=True est déjà activé → pas d'erreur.
+# ─────────────────────────────────────────────────────────────
+@app.callback(
+    Output('demo-store-A', 'data'),
+    Input('demo-toggle-A',      'n_clicks'),
+    Input('demo-btn-neuf-A',    'n_clicks'),
+    Input('demo-btn-warning-A', 'n_clicks'),
+    Input('demo-btn-critique-A','n_clicks'),
+    Input('demo-slider-usure-A', 'value'),
+    Input('demo-slider-trs-A',   'value'),
+    Input('demo-slider-derive-A','value'),
+    State('demo-store-A', 'data'),
+    prevent_initial_call=True,
+)
+def update_demo_store_A(toggle, neuf, warning, critique, usure, trs, derive, current):
+    triggered = ctx.triggered_id
+    d = dict(current) if current else {'active': False, 'usure': 50.0, 'TRS': 0.9, 'derive': 0.0}
+
+    if triggered == 'demo-toggle-A':
+        d['active'] = not d.get('active', False)
+
+    elif triggered == 'demo-btn-neuf-A':
+        d.update({'active': True, 'usure': 5.0,  'TRS': 0.97, 'derive': 0.0})
+
+    elif triggered == 'demo-btn-warning-A':
+        d.update({'active': True, 'usure': 75.0, 'TRS': 0.85, 'derive': 12.0})
+
+    elif triggered == 'demo-btn-critique-A':
+        d.update({'active': True, 'usure': 92.0, 'TRS': 0.71, 'derive': 28.0})
+
+    elif triggered in ('demo-slider-usure-A', 'demo-slider-trs-A', 'demo-slider-derive-A'):
+        d['active'] = True  # activer le démo automatiquement dès qu'on bouge un curseur
+        if usure  is not None: d['usure']  = float(usure)
+        if trs    is not None: d['TRS']    = float(trs)
+        if derive is not None: d['derive'] = float(derive)
+
+    return d
+
 
 # ─────────────────────────────────────────────────────────────
 # ENTRYPOINT

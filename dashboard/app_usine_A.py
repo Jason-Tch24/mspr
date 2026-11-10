@@ -18,6 +18,7 @@ import requests
 
 import config
 import store
+from ui_utils import bouton_clique
 import kpi_engine
 import simulator
 from config import (
@@ -1153,7 +1154,7 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
                     html.Div('AI · Maintenance Prédictive — RUL Outil', className='panel-title'),
                     html.Div(
                         f'Remaining Useful Life · {modele_info}' if api_ok
-                        else 'Remaining Useful Life · Ridge · R²=0.996',
+                        else 'Remaining Useful Life · modèle indisponible',
                         className='panel-subtitle',
                     ),
                 ]),
@@ -1180,8 +1181,8 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
                      style={'marginBottom': '12px'}),
             input_row,
             html.Div(
-                '⚠ Mode single-session : les features de lag/rolling sont approximées '
-                'par la valeur courante. Précision maximale avec fenêtre temporelle complète.',
+                '⚠ Modèle entraîné sur données simulées : erreur moyenne d\'environ une session '
+                '(30 min). Recalibrage sur données terrain nécessaire avant mise en production.',
                 style={'fontSize': '10px', 'color': theme['text_muted'],
                        'marginTop': '10px', 'fontStyle': 'italic'},
             ),
@@ -1334,7 +1335,9 @@ def update_page_A(n, active_tab, active_fault):
     prevent_initial_call=True,
 )
 def handle_fault_A(n_usure, n_arret, n_clear):
-    triggered = ctx.triggered_id
+    triggered = bouton_clique(ctx.triggered)
+    if triggered is None:      # simple rafraîchissement de l'onglet, aucun clic
+        raise PreventUpdate
     if triggered == 'fault-btn-usure-A':
         store.inject_fault(USINE_ID, _FAULT_PRESETS_A['usure_critique'])
         return 'Usure critique (92%)'

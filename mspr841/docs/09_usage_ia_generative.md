@@ -46,7 +46,7 @@ Rien n'a été intégré sur la seule foi du texte généré. Les vérifications
 | Diagnostic « le modèle de l'usine B ne fonctionne pas » | Appels réels à l'API avec six valeurs de delta | Confirmé : réponses inversées, probabilités proches de 33 % |
 | Nouvelle formulation du modèle B | Expérience chiffrée sur trois horizons et trois familles de modèles avant tout changement de code | Horizon 24 h retenu, ROC-AUC 0,74 en validation temporelle |
 | Sens physique du modèle | Probabilité calculée de 7,6 K à 15,5 K | Croissante quand le delta baisse, conforme à la simulation |
-| Code de l'API et des features | 58 tests automatisés, dont la parité entraînement / API | 58 réussis |
+| Code de l'API et des features | 61 tests automatisés, dont la parité entraînement / API | 61 réussis |
 | Intégration aux dashboards | Appel des fonctions d'affichage contre l'API lancée localement | Niveaux et messages conformes pour les trois scénarios |
 | Conteneurisation | Construction et démarrage réels des images | Un défaut de droits détecté et corrigé ; stack fonctionnelle |
 | Chiffres cités dans la documentation | Relus dans les fichiers produits (`benchmark_841.json`, rapports Silver, limites SPC) | Deux affirmations corrigées après vérification |

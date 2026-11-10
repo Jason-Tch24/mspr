@@ -18,6 +18,7 @@ import requests
 
 import config
 import store
+from ui_utils import bouton_clique
 import kpi_engine
 import simulator
 from config import (
@@ -1146,7 +1147,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
                     html.Div('AI · Maintenance Prédictive — Risque Thermique', className='panel-title'),
                     html.Div(
                         f'Classification {modele_info}' if api_ok
-                        else 'Classification · EasyEnsembleClassifier · RecallCritique=0.375',
+                        else 'Risque thermique à 24 h · modèle indisponible',
                         className='panel-subtitle',
                     ),
                 ]),
@@ -1173,8 +1174,8 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
                      style={'marginBottom': '12px'}),
             input_row,
             html.Div(
-                '⚠ Mode single-session : features de lag/rolling approximées. '
-                'Modèle entraîné sur données simulées — recalibration terrain recommandée.',
+                '⚠ Le modèle estime un niveau de risque à partir du régime thermique des 24 dernières heures, '
+                'pas l\'instant d\'une panne. Entraîné sur données simulées — recalibrage terrain nécessaire.',
                 style={'fontSize': '10px', 'color': theme['text_muted'],
                        'marginTop': '10px', 'fontStyle': 'italic'},
             ),
@@ -1320,7 +1321,9 @@ def update_page_B(n, active_tab, active_fault):
     prevent_initial_call=True,
 )
 def handle_fault_B(n_surch, n_panne, n_clear):
-    triggered = ctx.triggered_id
+    triggered = bouton_clique(ctx.triggered)
+    if triggered is None:      # simple rafraîchissement de l'onglet, aucun clic
+        raise PreventUpdate
     if triggered == 'fault-btn-surchauffe-B':
         store.inject_fault(USINE_ID, _FAULT_PRESETS_B['surchauffe'])
         return 'Dissipation dégradée (delta 9,2 K)'

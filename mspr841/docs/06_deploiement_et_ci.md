@@ -50,7 +50,7 @@ sur `main` ou sur une branche `feature/**`, et à chaque pull request vers `main
 ```mermaid
 flowchart LR
     P["push / pull request"] --> L["lint<br/>flake8"]
-    P --> T["test<br/>pytest · 58 tests"]
+    P --> T["test<br/>pytest · 61 tests"]
     P --> M["train<br/>ré-entraînement + tests API"]
     L --> D["docker<br/>build + test de fumée"]
     T --> D
@@ -59,7 +59,7 @@ flowchart LR
 | Job | Ce qu'il vérifie | Fonctionnalités de l'outil utilisées |
 |---|---|---|
 | `lint` | Aucune erreur de syntaxe ni nom indéfini dans `dashboard/` et `mspr841/` | Environnement Python géré par l'action `setup-python` |
-| `test` | Les 58 tests unitaires et d'intégration | Cache des dépendances, publication du rapport `junit.xml` en artefact |
+| `test` | Les 61 tests unitaires et d'intégration | Cache des dépendances, publication du rapport `junit.xml` en artefact |
 | `train` | Les modèles se régénèrent à partir des données versionnées et l'API fonctionne avec eux | Artefact `benchmark_841.json` |
 | `docker` | Les images se construisent, l'API démarre saine, une prédiction réelle renvoie `CRITICAL` pour un outil usé à 88 % | Dépendance entre jobs (`needs`), `docker compose up --wait` |
 

@@ -1,0 +1,88 @@
+name: CI
+
+# Déclenchée à chaque push sur main ou sur une branche de travail,
+# et à chaque pull request vers main.
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ── 1. Analyse statique ─────────────────────────────────────
+  # Erreurs de syntaxe (E9) et noms indéfinis / imports cassés (F).
+  lint:
+    name: Lint (flake8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flake8==7.1.1
+      - name: flake8 — dashboard, API, entraînement, tests
+        run: flake8 dashboard/ mspr841/ --select=E9,F --extend-ignore=F401,F841 --max-line-length=120
+
+  # ── 2. Tests automatisés ────────────────────────────────────
+  # Unitaires (features, règles métier, store) + intégration
+  # (API de scoring, pipeline temps réel du dashboard).
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: pytest
+        run: pytest --junitxml=reports/junit.xml
+      - name: Rapport de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-tests
+          path: reports/junit.xml
+
+  # ── 3. Reproductibilité des modèles ─────────────────────────
+  # Ré-entraîne les modèles à partir des données Gold versionnées
+  # et rejoue les tests de l'API sur ces modèles fraîchement produits.
+  train:
+    name: Ré-entraînement des modèles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python mspr841/ml/train_models.py
+      - run: pytest mspr841/tests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-modeles
+          path: reports/benchmark_841.json
+
+  # ── 4. Construction et test des images Docker ───────────────
+  docker:
+    name: Docker (build + test de fumée)
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build des images
+        run: docker compose build api dashboard_usine_b
+      - name: Démarrage de l'API et attente du healthcheck
+        run: docker compose up -d --wait api
+      - name: Test de fumée — prédiction réelle dans le conteneur
+        run: |
+          curl -sf http://localhost:8000/ | tee /dev/stderr | grep -q '"modeles_ok":true'
+          curl -sf -X POST http://localhost:8000/predict/rul \
+            -H 'Content-Type: application/json' \
+            -d '{"usure_cumulee_pct": 88, "TRS": 0.9}' | tee /dev/stderr | grep -q '"niveau_alerte":"CRITICAL"'
+      - name: Arrêt
+        if: always()
+        run: docker compose down

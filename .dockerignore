@@ -1,0 +1,41 @@
+# Contrôle de version
+.git
+.gitignore
+
+# Cache Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Notebooks et fichiers de développement
+# (non nécessaires dans les images de production)
+notebooks/
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests et documentation (inutiles dans les images)
+**/test_*.py
+**/conftest.py
+mspr841/tests/
+mspr841/docs/
+*.pdf
+.pytest_cache/
+
+# Logs
+*.log
+logs/
+
+# Variables d'environnement
+.env
+.env.local

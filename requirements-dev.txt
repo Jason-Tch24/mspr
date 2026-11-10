@@ -1,0 +1,6 @@
+# Environnement de développement et de test (utilisé par la CI)
+-r dashboard/requirements.txt
+-r mspr841/ml/requirements.txt
+pytest==8.3.4
+httpx==0.28.1
+flake8==7.1.1

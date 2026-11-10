@@ -92,14 +92,15 @@ Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
 |---|---|---|
 | D01–D10 | Configuration et store (`test_health.py`) | Usines, ports, seuils, structures de données conformes |
 | D11–D15 | Store (`test_store.py`) | Lecture/écriture, tampon, alertes, injection et retrait d'une panne, isolation par usine |
+| D22–D24 | Filtre de clics des boutons d'injection (`test_ui_utils.py`) | Un rafraîchissement sans clic est ignoré ; un clic réel est identifié |
 | D16–D21 | Pipeline temps réel (`test_pipeline_temps_reel.py`) | Le simulateur alimente le store ; KPI calculés ; moteur d'alertes sans erreur ; une panne injectée déclenche une alerte |
 
 ## 4. Résultats de la campagne
 
 | Mesure | Résultat |
 |---|---|
-| Tests exécutés | 58 |
-| Réussis | 58 |
+| Tests exécutés | 61 |
+| Réussis | 61 |
 | Échecs | 0 |
 | Durée | ≈ 12 s |
 | Analyse statique flake8 (E9, F) | 0 erreur |
@@ -114,20 +115,20 @@ Environnement : macOS, Python 3.13, puis rejoué sous Linux / Python 3.11 par la
 
 | Id | Scénario | Étapes | Résultat attendu | Statut |
 |---|---|---|---|---|
-| R01 | Consulter la prédiction d'usure | Ouvrir http://localhost:8051, onglet AI Predictions | Jauge RUL, badge de niveau, phrase d'action, modèle affiché | ☐ |
-| R02 | Outil en fin de vie | Cliquer « Usure critique (92 %) » | Badge CRITICAL, message « Remplacement outil IMMINENT » | ☐ |
-| R03 | Retour à la normale | Cliquer « Reprendre simulateur » | Le badge revient au niveau du simulateur | ☐ |
-| R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet AI Predictions | Niveau, probabilité sous 24 h, nombre de sessions analysées | ☐ |
-| R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | ☐ |
-| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,9 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | ☐ |
-| R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | ☐ |
-| R08 | Reprise de l'IA | `docker compose start api` | L'onglet IA affiche de nouveau une prédiction, sans redémarrer le dashboard | ☐ |
-| R09 | Changer un seuil | Passer `seuil_warning` à 0,30 dans `regles_metier.json`, reconstruire l'API | Davantage de sessions classées « À risque » | ☐ |
-| R10 | Vue direction | Ouvrir http://localhost:8050 | Les trois usines et leur statut | ☐ |
+| R01 | Consulter la prédiction d'usure | Ouvrir http://localhost:8051, onglet AI Predictions | Jauge RUL, badge de niveau, phrase d'action, modèle affiché | ✅ 10/11/2026 |
+| R02 | Outil en fin de vie | Cliquer « Usure critique (92 %) » | Badge CRITICAL, message « Remplacement outil IMMINENT » | ✅ 10/11/2026 |
+| R03 | Retour à la normale | Cliquer « Reprendre simulateur » | Le badge revient au niveau du simulateur | ✅ 10/11/2026 |
+| R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet AI Predictions | Niveau, probabilité sous 24 h, nombre de sessions analysées | ✅ 10/11/2026 |
+| R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | ✅ 10/11/2026 |
+| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,9 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | ✅ 10/11/2026 |
+| R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | ✅ 10/11/2026 |
+| R08 | Reprise de l'IA | `docker compose start api` | L'onglet IA affiche de nouveau une prédiction, sans redémarrer le dashboard | ✅ 10/11/2026 |
+| R09 | Changer un seuil | Passer `seuil_warning` à 0,30 dans `regles_metier.json`, reconstruire l'API | Davantage de sessions classées « À risque » | ☐ à jouer |
+| R10 | Vue direction | Ouvrir http://localhost:8050 | Les trois usines et leur statut | ✅ 10/11/2026 |
 
-Les scénarios R02, R05 et R06 ont été vérifiés par programme (appel des fonctions d'affichage
-contre l'API) ; l'ensemble reste à dérouler à l'écran par l'équipe avant la soutenance, en
-cochant la colonne Statut.
+Les scénarios R01 à R08 et R10 ont été déroulés à l'écran dans Chrome le 10/11/2026, sur la
+stack Docker complète. R09 (changement de seuil) reste à jouer. L'équipe doit rejouer
+l'ensemble avant la soutenance, sur la machine de démonstration.
 
 ## 6. Anomalies détectées et corrections
 
@@ -139,6 +140,7 @@ cochant la colonne Statut.
 | Modèles exclus de Git : l'image Docker démarrait sans modèle | Lecture du Dockerfile | Majeure | Modèles versionnés ; healthcheck exigeant `modeles_ok` | Job `docker` de la CI |
 | Adresse de l'API écrite en dur (`localhost`) : dashboards incapables de joindre l'API en conteneur | Lecture du code | Majeure | Variable `MECHA_API_URL` | Test système |
 | Conteneur API en échec : fichiers illisibles par l'utilisateur non privilégié | Test système local | Majeure | `COPY --chown` dans le Dockerfile | Test système |
+| Une panne s'injectait seule à l'ouverture de l'onglet IA (usine B) et « Reprendre simulateur » restait sans effet ; à l'usine A, la panne injectée était effacée au rafraîchissement suivant | Recette à l'écran (R03, R05) | Bloquante pour la démonstration | Seul un clic réel (`n_clicks` > 0) est pris en compte : `dashboard/ui_utils.py` | `test_ui_utils.py`, R02 à R06 rejoués |
 | Tests du dashboard écrits comme scripts : aucune assertion comptée par pytest | Lecture des tests | Mineure | Réécriture en fonctions `test_*` avec fixture de simulateur | D11 à D21 |
 | Version de scikit-learn différente entre l'entraînement et `requirements.txt` | Comparaison des versions | Mineure | Version alignée (1.8.0) et tracée dans les métadonnées | Job `train` de la CI |
 
@@ -151,7 +153,7 @@ cochant la colonne Statut.
 | Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,05 session | ✅ |
 | Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,74 | ✅ |
 | Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 28 % / 58 % / 69 % | ✅ |
-| Tests automatisés | 100 % réussis | 58 / 58 | ✅ |
+| Tests automatisés | 100 % réussis | 61 / 61 | ✅ |
 | Démarrage en conteneur | API saine, dashboards servis | Vérifié | ✅ |
 | Résistance à l'indisponibilité de l'IA | Dashboard utilisable | Vérifié par le code et R07 | ✅ |
 

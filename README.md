@@ -47,7 +47,7 @@ cd dashboard && python app_usine_B.py
 ## Tests et entraînement
 
 ```bash
-pytest                                  # 58 tests : API, features, règles, dashboard
+pytest                                  # 61 tests : API, features, règles, dashboard
 python mspr841/ml/train_models.py       # ré-entraîne et compare les modèles
 flake8 dashboard/ mspr841/ --select=E9,F --extend-ignore=F401,F841
 ```

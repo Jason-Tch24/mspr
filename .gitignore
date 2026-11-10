@@ -29,9 +29,11 @@ env/
 *.swp
 *.swo
 
-# Modèles sérialisés (générés par le script ML)
-mspr841/api/models/*.joblib
-mspr841/api/models/*.pkl
+# Les modèles (mspr841/api/models/*.joblib) sont volontairement versionnés :
+# ils pèsent quelques Ko et rendent l'image Docker de l'API reproductible.
+
+# Caches de test
+.pytest_cache/
 
 # Logs
 *.log

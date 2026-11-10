@@ -1,0 +1,76 @@
+{
+  "usine": "Usine_A",
+  "type": "regression",
+  "cible": "Sessions de 30 min restantes avant le prochain remplacement d'outil",
+  "algorithme": "Linéaire sur l'usure seule",
+  "features": [
+    "usure_cumulee_pct",
+    "TRS",
+    "temps_cycle_min",
+    "derive_cycle_pct",
+    "disponibilite",
+    "performance",
+    "qualite",
+    "consommation_kwh",
+    "vitesse_rotation_rpm",
+    "couple_nm",
+    "taux_rebut"
+  ],
+  "valeurs_par_defaut": {
+    "usure_cumulee_pct": 45.44,
+    "TRS": 0.9474,
+    "temps_cycle_min": 45.47,
+    "derive_cycle_pct": 13.68,
+    "disponibilite": 1.0,
+    "performance": 0.9993,
+    "qualite": 0.9639,
+    "consommation_kwh": 3.14,
+    "vitesse_rotation_rpm": 1499.0,
+    "couple_nm": 40.14,
+    "taux_rebut": 0.0361
+  },
+  "n_sessions_entrainement": 8464,
+  "validation": "TimeSeriesSplit walk-forward, 5 plis",
+  "metriques_cv": {
+    "MAE": 1.052,
+    "MAE_ecart_type": 0.066,
+    "RMSE": 1.348,
+    "R2": 0.996
+  },
+  "benchmark": {
+    "Moyenne (référence naïve)": {
+      "MAE": 18.387,
+      "MAE_ecart_type": 0.145,
+      "RMSE": 21.246,
+      "R2": -0.0003,
+      "reference": true
+    },
+    "Linéaire sur l'usure seule": {
+      "MAE": 1.052,
+      "MAE_ecart_type": 0.066,
+      "RMSE": 1.348,
+      "R2": 0.996
+    },
+    "Ridge": {
+      "MAE": 1.053,
+      "MAE_ecart_type": 0.066,
+      "RMSE": 1.348,
+      "R2": 0.996
+    },
+    "RandomForestRegressor": {
+      "MAE": 1.092,
+      "MAE_ecart_type": 0.062,
+      "RMSE": 1.409,
+      "R2": 0.9956
+    },
+    "GradientBoostingRegressor": {
+      "MAE": 1.077,
+      "MAE_ecart_type": 0.065,
+      "RMSE": 1.382,
+      "R2": 0.9957
+    }
+  },
+  "limite_connue": "Dans les données simulées, l'usure cumulée progresse quasi linéairement : la RUL se déduit presque directement de l'usure, d'où un R² très élevé même pour un modèle linéaire. Ce score ne préjuge pas de la performance sur des machines réelles (usure non linéaire, casse brutale).",
+  "date_entrainement": "2026-11-10T21:31:18",
+  "scikit_learn": "1.8.0"
+}

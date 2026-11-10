@@ -1,3 +1,5 @@
+# NOTE (MSPR TPRE841) : exploration du premier PoC, conservée pour l'historique.
+# Les modèles servis par l'API sont produits par mspr841/ml/train_models.py.
 # =============================================================================
 # ml_poc_mecha_rul_thermique.py
 # Projet MECHA — PoC Intelligence Artificielle

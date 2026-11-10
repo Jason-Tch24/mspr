@@ -16,6 +16,7 @@ from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import requests
 
+import config
 import store
 import kpi_engine
 import simulator
@@ -899,15 +900,18 @@ def build_tab_alerts(theme: dict) -> html.Div:
 # ─────────────────────────────────────────────────────────────
 # TAB AI — Classification risque thermique Usine B
 # ─────────────────────────────────────────────────────────────
-_AI_API_URL_B = 'http://localhost:8000/predict/risque-thermique'
+_AI_API_URL_B = f'{config.API_BASE_URL}/predict/risque-thermique'
+_HISTORIQUE_SESSIONS = 47   # + session courante = 24 h, fenêtre du modèle
 
 _FAULT_PRESETS_B = {
+    # Le risque thermique (HDF) apparaît quand le delta process/air BAISSE :
+    # la machine dissipe mal sa chaleur. Nominal ≈ 11,5 K, seuil critique 8,6 K.
     'surchauffe' : {
-        'temp_process_delta': 20.0, 'nb_pannes_7j': 8,
-        'indice_stabilite_process': 0.35, 'usure_cumulee_pct': 72.0,
+        'temp_process_delta': 9.2, 'nb_pannes_7j': 8,
+        'indice_stabilite_process': 0.80, 'usure_cumulee_pct': 72.0,
     },
     'panne_imminente': {
-        'temp_process_delta': 26.0, 'nb_pannes_7j': 15,
+        'temp_process_delta': 7.6, 'nb_pannes_7j': 15,
         'panne_thermique': 1,       'usure_cumulee_pct': 88.0,
         'indice_stabilite_process': 0.15,
     },
@@ -940,7 +944,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
         ]),
         html.Div(style={'padding': '12px 16px', 'display': 'flex', 'gap': '10px',
                         'flexWrap': 'wrap', 'alignItems': 'center'}, children=[
-            _fault_btn('Surchauffe (delta 20K)',    'fault-btn-surchauffe-B',  theme['warning']),
+            _fault_btn('Dissipation dégradée (delta 9,2 K)', 'fault-btn-surchauffe-B', theme['warning']),
             _fault_btn('🔥 Panne imminente',        'fault-btn-panne-B',       theme['critical']),
             _fault_btn('✓ Reprendre simulateur',    'fault-btn-clear-B',       theme['ok']),
             html.Div(
@@ -979,6 +983,21 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
         'panne_usure_outil'       : int(state.get('panne_usure_outil', 0)),
     }
 
+    # Historique thermique des 24 dernières heures : le modèle évalue le régime,
+    # pas la seule mesure courante. En panne injectée, on simule un régime établi.
+    fault_delta = store.get_fault_injection(USINE_ID).get('temp_process_delta')
+    if fault_delta is not None:
+        historique = [float(fault_delta)] * _HISTORIQUE_SESSIONS
+    else:
+        buf = store.get_buffer_as_df(USINE_ID)
+        if 'temp_process_delta' in buf.columns:
+            serie = buf['temp_process_delta'].dropna().astype(float).tolist()
+            # la dernière session du buffer est la session courante
+            historique = serie[:-1][-_HISTORIQUE_SESSIONS:]
+        else:
+            historique = []
+    payload['historique_delta'] = historique
+
     try:
         resp = requests.post(_AI_API_URL_B, json=payload, timeout=2)
         if resp.status_code == 200:
@@ -993,7 +1012,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
         else:
             err_msg = f"API erreur {resp.status_code}"
     except Exception as e:
-        err_msg = f"API indisponible — lancez l'API sur le port 8000 ({type(e).__name__})"
+        err_msg = f"API indisponible ({config.API_BASE_URL}) — {type(e).__name__}"
 
     # ── Couleurs ─────────────────────────────────────────────
     alerte_color = {
@@ -1005,9 +1024,9 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
 
     # ── Graphique probabilités ────────────────────────────────
     if api_ok and probas:
-        classes = ['Normal', 'Risque', 'Critique']
+        classes = ['Normal', 'À risque']
         vals    = [probas.get(c, 0) for c in classes]
-        bar_colors = [theme['ok'], theme['warning'], theme['critical']]
+        bar_colors = [theme['ok'], alerte_color if alerte != 'OK' else theme['warning']]
 
         fig_proba = go.Figure()
         for c, v, col in zip(classes, vals, bar_colors):
@@ -1019,7 +1038,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
                 textposition='outside',
                 textfont={'size': 11, 'color': col},
             ))
-        layout_p = _plot_layout(theme, title='Probabilités par classe (%)', height=240)
+        layout_p = _plot_layout(theme, title='Probabilité de panne thermique sous 24 h (%)', height=240)
         layout_p['margin']      = dict(l=20, r=20, t=50, b=30)
         layout_p['showlegend'] = False
         layout_p['yaxis']      = {**_axis(theme, '%'), 'range': [0, 115]}
@@ -1058,7 +1077,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
             'padding': '20px', 'textAlign': 'center',
             'border': f"2px solid {alerte_color if api_ok else theme['border']}",
         }, children=[
-            html.Div('Classe prédite', style={'fontSize': '10px', 'color': theme['text_muted'],
+            html.Div('Niveau de risque', style={'fontSize': '10px', 'color': theme['text_muted'],
                                               'textTransform': 'uppercase', 'fontWeight': '700'}),
             html.Div(nom if api_ok else '—', style={
                 'fontSize': '28px', 'fontWeight': '900',
@@ -1066,7 +1085,7 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
                 'marginTop': '6px',
             }),
             html.Div(
-                f'label {label}' if api_ok else '',
+                f'{len(historique)} sessions d\'historique analysées' if api_ok else '',
                 style={'fontSize': '10px', 'color': theme['text_muted'], 'marginTop': '4px'},
             ),
         ]) if api_ok else html.Div(
@@ -1304,7 +1323,7 @@ def handle_fault_B(n_surch, n_panne, n_clear):
     triggered = ctx.triggered_id
     if triggered == 'fault-btn-surchauffe-B':
         store.inject_fault(USINE_ID, _FAULT_PRESETS_B['surchauffe'])
-        return 'Surchauffe (delta 20K)'
+        return 'Dissipation dégradée (delta 9,2 K)'
     if triggered == 'fault-btn-panne-B':
         store.inject_fault(USINE_ID, _FAULT_PRESETS_B['panne_imminente'])
         return 'Panne thermique imminente'

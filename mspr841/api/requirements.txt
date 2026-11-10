@@ -4,7 +4,6 @@ pydantic==2.10.3
 joblib==1.4.2
 numpy==2.2.0
 pandas==2.2.3
-scikit-learn==1.6.0
-xgboost==3.2.0
-imbalanced-learn==0.14.1
-pyarrow==18.1.0
+# Doit rester identique à la version utilisée pour entraîner les modèles
+# (voir "scikit_learn" dans models/*_meta.json).
+scikit-learn==1.8.0

@@ -186,29 +186,37 @@ session (30 min), et non sur le rafraîchissement de l'écran.
 
 ## 4. Écrans métiers
 
+### Navigation commune
+
+Les quatre tableaux de bord partagent le même habillage (`dashboard/shell.py`, `dashboard/assets/app.css`) :
+une barre de navigation **Groupe · Usine A · Usine B · Usine C** présente sur chaque écran, avec
+un point de couleur qui donne l'état de chaque site (vert : normal, orange : à surveiller,
+rouge : critique). Depuis la vue groupe (port 8050), un clic sur la fiche d'un site ouvre le
+tableau de bord de l'usine dans le même onglet. Tous les libellés sont en français.
+
 ### Dashboards par usine (ports 8051, 8052, 8053)
 
 | Onglet | Contenu | Utilisateur principal | Usage |
 |---|---|---|---|
-| Overview | TRS, disponibilité, performance, qualité, état des 4 machines | Responsable de production | Voir en un coup d'œil si la ligne tient ses objectifs |
+| Vue d’ensemble | TRS, disponibilité, performance, qualité, état des 4 machines | Responsable de production | Voir en un coup d'œil si la ligne tient ses objectifs |
 | Maintenance | Usure outil, pannes, durées d'arrêt | Technicien, responsable maintenance | Suivre l'état des équipements |
-| Quality | Taux de rebut, limites de contrôle, dérives | Direction qualité | Détecter une dérive avant la non-conformité |
-| Alerts | Alertes actives et historique | Tous | Savoir ce qui demande une action |
-| **AI Predictions** | Prédiction du modèle, niveau d'alerte, message d'action, mesures utilisées, modèle et sa performance | Technicien, responsable maintenance | **Décider d'une intervention avant la panne** |
+| Qualité | Taux de rebut, limites de contrôle, dérives | Direction qualité | Détecter une dérive avant la non-conformité |
+| Alertes | Alertes actives et historique | Tous | Savoir ce qui demande une action |
+| **Prédictions IA** | Prédiction du modèle, niveau d'alerte, message d'action, mesures utilisées, modèle et sa performance | Technicien, responsable maintenance | **Décider d'une intervention avant la panne** |
 
-### Onglet AI Predictions — Usine A
+### Onglet Prédictions IA — Usine A
 
 - Jauge de durée de vie résiduelle (sessions et heures).
 - Badge OK / WARNING / CRITICAL et phrase d'action.
 - Mesures envoyées au modèle (usure, TRS, temps de cycle…).
-- Démonstration : « Usure critique (92 %) », « Arrêt production », « Reprendre simulateur ».
+- Démonstration : « Usure critique (92 %) », « Arrêt production », « Reprendre le simulateur ».
 
-### Onglet AI Predictions — Usine B
+### Onglet Prédictions IA — Usine B
 
 - Niveau de risque (Normal / À risque / Critique) et probabilité de panne sous 24 h.
 - Nombre de sessions d'historique analysées.
 - Phrase d'action et mesures courantes.
-- Démonstration : « Dissipation dégradée (delta 9,2 K) », « Panne imminente » (7,6 K), « Reprendre simulateur ».
+- Démonstration : « Dissipation dégradée (delta 9,2 K) », « Panne imminente » (7,6 K), « Reprendre le simulateur ».
 
 ### Dashboard Groupe (port 8050)
 
@@ -219,7 +227,7 @@ accès à chaque dashboard d'usine.
 
 | Moment | Acteur | Action dans l'outil | Décision |
 |---|---|---|---|
-| Prise de poste | Technicien de maintenance | Ouvre l'onglet AI Predictions de son usine | Liste les machines à contrôler en priorité |
+| Prise de poste | Technicien de maintenance | Ouvre l'onglet Prédictions IA de son usine | Liste les machines à contrôler en priorité |
 | Niveau « À risque » (usine B) | Technicien | Lit le message, contrôle le refroidissement | Intervention légère dans le poste |
 | Niveau « Critique » (usine B) | Responsable maintenance | Vérifie la tendance thermique dans Maintenance | Arrêt planifié plutôt que subi |
 | RUL < 20 sessions (usine A) | Responsable de production | Consulte la durée restante | Place le changement d'outil à un changement de série |

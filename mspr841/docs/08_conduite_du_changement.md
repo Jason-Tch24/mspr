@@ -119,7 +119,7 @@ un mémo plastifié près des postes ; une session de rappel un mois après.
 
 | Besoin d'accompagnement | Élément de la solution |
 |---|---|
-| Montrer sans risque ce qui se passe en cas de dégradation | Boutons d'injection de panne dans l'onglet AI Predictions : support de démonstration et d'atelier pratique |
+| Montrer sans risque ce qui se passe en cas de dégradation | Boutons d'injection de panne dans l'onglet Prédictions IA : support de démonstration et d'atelier pratique |
 | Donner la main aux métiers sur les alertes | Seuils et messages dans `regles_metier.json`, modifiables sans développement |
 | Rendre l'IA explicable | Modèle retenu, performance et limites affichés et consultables (`GET /models`) |
 | Ne pas créer de dépendance | Les dashboards fonctionnent si l'IA est arrêtée |

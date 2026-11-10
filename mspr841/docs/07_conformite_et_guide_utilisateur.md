@@ -25,7 +25,7 @@
 | Mécanismes d'intégration IA ↔ application | API REST, fichiers, variables d'environnement | Conforme | Document 04 §2 |
 | Paramétrage : règles de calcul, seuils, alertes, fréquences | `regles_metier.json`, `ALERT_RULES`, fréquences documentées | Conforme | Document 04 §3 |
 | Langage ou formalisme de configuration | JSON de règles, règles déclaratives, contrat d'API | Conforme | Document 04 §3 |
-| Interfaces et écrans métiers, usages | Onglet AI Predictions, tableau des usages | Conforme | Document 04 §4–5 |
+| Interfaces et écrans métiers, usages | Onglet Prédictions IA, tableau des usages | Conforme | Document 04 §4–5 |
 | Prompts d'IA générative fournis et analysés | Fournis | Conforme | Document 09 |
 | Démarche de validation | Critères techniques et fonctionnels | Conforme | Document 05 §7 |
 | Déploiement multi-sites, limites et prérequis | Plan en six phases | Conforme | Document 06 §4 |
@@ -79,7 +79,7 @@ Il ne pilote pas les machines et n'arrête rien tout seul : **c'est vous qui dé
 
 ### Y accéder
 
-Ouvrez le dashboard de votre usine, puis l'onglet **AI Predictions** :
+Ouvrez le dashboard de votre usine, puis l'onglet **Prédictions IA** :
 Usine A `http://<serveur>:8051` · Usine B `http://<serveur>:8052` · Groupe `http://<serveur>:8050`.
 
 ### Lire l'écran — Usine A (usure de l'outil)
@@ -115,7 +115,7 @@ mesures passées l'estimation s'appuie : plus il y en a (jusqu'à 47), plus elle
   « À risque » et 3 sur 10 au niveau « Normal ».
 - **L'outil classe les priorités** : il vous dit où regarder en premier, pas où il est
   inutile de regarder.
-- **Croisez avec les autres onglets** : Maintenance (tendance thermique, usure) et Alerts
+- **Croisez avec les autres onglets** : Maintenance (tendance thermique, usure) et Alertes
   (seuils franchis en ce moment).
 - **Regardez l'évolution** plutôt qu'une valeur isolée : un niveau qui monte sur plusieurs
   heures est un signal plus sûr qu'un pic.

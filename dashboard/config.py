@@ -2,7 +2,11 @@
 # config.py — Configuration centrale du système de monitoring MECHA
 # ============================================================
 
+import os
 from pathlib import Path
+
+# URL de l'API de scoring IA (MSPR 841). En Docker Compose : http://api:8000
+API_BASE_URL = os.environ.get('MECHA_API_URL', 'http://localhost:8000').rstrip('/')
 
 # ── Racine du projet ──────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent

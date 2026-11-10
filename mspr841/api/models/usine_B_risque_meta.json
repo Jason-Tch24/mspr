@@ -1,0 +1,79 @@
+{
+  "usine": "Usine_B",
+  "type": "classification_binaire",
+  "cible": "Au moins une panne thermique dans les 48 prochaines sessions (24 h)",
+  "algorithme": "Régression logistique",
+  "features": [
+    "delta",
+    "delta_moy_6h",
+    "delta_moy_24h",
+    "delta_min_6h",
+    "delta_tendance"
+  ],
+  "horizon_sessions": 48,
+  "n_sessions_entrainement": 8592,
+  "validation": "TimeSeriesSplit walk-forward, 5 plis, gap de 48 sessions",
+  "metriques_cv": {
+    "ROC_AUC": 0.738,
+    "ROC_AUC_ecart_type": 0.036,
+    "PR_AUC": 0.609,
+    "Brier": 0.2108
+  },
+  "lecture_metier_des_seuils": {
+    "seuil_warning": 0.45,
+    "seuil_critical": 0.65,
+    "frequence_de_base": 0.409,
+    "niveaux": {
+      "OK": {
+        "part_des_sessions": 0.629,
+        "taux_panne_24h_observe": 0.277
+      },
+      "WARNING": {
+        "part_des_sessions": 0.175,
+        "taux_panne_24h_observe": 0.575
+      },
+      "CRITICAL": {
+        "part_des_sessions": 0.196,
+        "taux_panne_24h_observe": 0.686
+      }
+    },
+    "rappel_alerte": 0.574,
+    "precision_alerte": 0.634
+  },
+  "benchmark": {
+    "Fréquence de base (référence naïve)": {
+      "ROC_AUC": 0.5,
+      "ROC_AUC_ecart_type": 0.0,
+      "PR_AUC": 0.409,
+      "Brier": 0.2439,
+      "reference": true
+    },
+    "Régression logistique sur le delta instantané": {
+      "ROC_AUC": 0.725,
+      "ROC_AUC_ecart_type": 0.033,
+      "PR_AUC": 0.597,
+      "Brier": 0.2115
+    },
+    "Régression logistique": {
+      "ROC_AUC": 0.738,
+      "ROC_AUC_ecart_type": 0.036,
+      "PR_AUC": 0.609,
+      "Brier": 0.2108
+    },
+    "RandomForestClassifier": {
+      "ROC_AUC": 0.657,
+      "ROC_AUC_ecart_type": 0.104,
+      "PR_AUC": 0.547,
+      "Brier": 0.254
+    },
+    "GradientBoostingClassifier": {
+      "ROC_AUC": 0.679,
+      "ROC_AUC_ecart_type": 0.106,
+      "PR_AUC": 0.577,
+      "Brier": 0.2448
+    }
+  },
+  "limite_connue": "Les pannes simulées suivent un processus aléatoire dont seul le taux dépend du régime thermique : le modèle estime un NIVEAU DE RISQUE, il ne peut pas annoncer l'instant exact d'une panne. Recalibrage indispensable sur données terrain.",
+  "date_entrainement": "2026-11-10T21:31:18",
+  "scikit_learn": "1.8.0"
+}

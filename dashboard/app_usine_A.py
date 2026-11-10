@@ -16,6 +16,7 @@ from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import requests
 
+import config
 import store
 import kpi_engine
 import simulator
@@ -892,7 +893,7 @@ def build_tab_alerts(theme: dict) -> html.Div:
 # ─────────────────────────────────────────────────────────────
 # TAB AI — Prédiction RUL Usine A
 # ─────────────────────────────────────────────────────────────
-_AI_API_URL_A = 'http://localhost:8000/predict/rul'
+_AI_API_URL_A = f'{config.API_BASE_URL}/predict/rul'
 
 _FAULT_PRESETS_A = {
     'usure_critique' : {
@@ -979,7 +980,7 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
         else:
             err_msg = f"API erreur {resp.status_code}"
     except Exception as e:
-        err_msg = f"API indisponible — lancez l'API sur le port 8000 ({type(e).__name__})"
+        err_msg = f"API indisponible ({config.API_BASE_URL}) — {type(e).__name__}"
 
     # ── Couleurs alerte ────────────────────────────────────────
     alerte_color = {

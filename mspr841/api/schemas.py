@@ -1,10 +1,10 @@
 """
-schemas.py — Modèles Pydantic pour l'API MECHA IA
-Définit les structures d'entrée et de sortie des deux endpoints.
+schemas.py — Contrat d'entrée / sortie de l'API MECHA IA (modèles Pydantic).
 """
 
-from pydantic import BaseModel, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 # ─────────────────────────────────────────────────────────────
@@ -12,10 +12,11 @@ from typing import Optional
 # ─────────────────────────────────────────────────────────────
 
 class RULInput(BaseModel):
-    """Capteurs et KPIs courants de l'Usine A pour prédire la RUL."""
+    """Capteurs et KPIs courants de l'Usine A. Seuls l'usure et le TRS sont obligatoires ;
+    les champs absents sont remplacés par la médiane observée à l'entraînement."""
 
     usure_cumulee_pct: float = Field(..., ge=0, le=100,
-        description="Usure cumulée de l'outil en % (0=neuf, 90=limite)")
+        description="Usure cumulée de l'outil en % (0 = neuf, 90 = limite de remplacement)")
     TRS: float = Field(..., ge=0, le=1,
         description="Taux de Rendement Synthétique (0–1)")
     temps_cycle_min: Optional[float] = Field(None, ge=0,
@@ -61,72 +62,68 @@ class RULOutput(BaseModel):
 
     usine: str
     rul_sessions: float = Field(..., description="Sessions restantes avant remplacement outil")
-    rul_heures: float   = Field(..., description="Heures restantes avant remplacement (1 session = 30 min)")
+    rul_heures: float = Field(..., description="Heures restantes (1 session = 30 min)")
     usure_cumulee_pct: float
-    niveau_alerte: str  = Field(..., description="OK | WARNING | CRITICAL")
+    niveau_alerte: str = Field(..., description="OK | WARNING | CRITICAL")
     interpretation: str
     modele: str
 
 
 # ─────────────────────────────────────────────────────────────
-# USINE B — Classification du risque thermique
+# USINE B — Risque de panne thermique à 24 h
 # ─────────────────────────────────────────────────────────────
 
 class RisqueThermInput(BaseModel):
-    """Capteurs et KPIs courants de l'Usine B pour classifier le risque thermique."""
+    """Mesures thermiques de l'Usine B.
 
-    temp_process_delta: float = Field(...,
-        description="Delta thermique process / air ambiant (K)")
-    TRS: float = Field(..., ge=0, le=1,
-        description="Taux de Rendement Synthétique (0–1)")
+    Le modèle évalue le régime thermique : il a besoin du delta courant et,
+    idéalement, des deltas des sessions précédentes (`historique_delta`).
+    Les autres champs sont acceptés pour compatibilité avec les dashboards
+    mais ne sont pas utilisés par le modèle."""
+
+    temp_process_delta: float = Field(..., ge=0, le=60,
+        description="Delta thermique process / air ambiant de la session courante (K)")
+    historique_delta: Optional[list[float]] = Field(None, max_length=500,
+        description="Deltas des sessions précédentes, de la plus ancienne à la plus récente, "
+                    "session courante exclue. 47 valeurs couvrent les 24 h utilisées par le modèle.")
+    TRS: Optional[float] = Field(None, ge=0, le=1)
     taux_rebut: Optional[float] = Field(None, ge=0, le=1)
     disponibilite: Optional[float] = Field(None, ge=0, le=1)
     performance: Optional[float] = Field(None, ge=0, le=1)
     consommation_kwh: Optional[float] = Field(None, ge=0)
     temps_cycle_min: Optional[float] = Field(None, ge=0)
     derive_cycle_pct: Optional[float] = Field(None)
-    nb_pannes_7j: Optional[int] = Field(None, ge=0,
-        description="Nombre de pannes sur les 7 derniers jours")
-    temp_process_c: Optional[float] = Field(None,
-        description="Température absolue process (°C)")
+    nb_pannes_7j: Optional[int] = Field(None, ge=0)
+    temp_process_c: Optional[float] = Field(None)
     usure_cumulee_pct: Optional[float] = Field(None, ge=0, le=100)
     couple_nm: Optional[float] = Field(None, ge=0)
     vitesse_rotation_rpm: Optional[float] = Field(None, ge=0)
-    indice_stabilite_process: Optional[float] = Field(None, ge=0, le=1,
-        description="Indice de stabilité process (0=instable, 1=stable)")
-    panne_usure_outil: Optional[int] = Field(None, ge=0, le=1,
-        description="Panne par usure outil en cours (0/1)")
+    indice_stabilite_process: Optional[float] = Field(None, ge=0, le=1)
+    panne_usure_outil: Optional[int] = Field(None, ge=0, le=1)
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "temp_process_delta": 9.5,
-                "TRS": 0.93,
-                "taux_rebut": 0.03,
-                "disponibilite": 0.97,
-                "performance": 0.98,
-                "consommation_kwh": 3.5,
-                "temps_cycle_min": 40.0,
-                "derive_cycle_pct": 5.0,
-                "nb_pannes_7j": 8,
-                "temp_process_c": 34.0,
-                "usure_cumulee_pct": 42.0,
-                "couple_nm": 45.0,
-                "vitesse_rotation_rpm": 1530,
-                "indice_stabilite_process": 0.89,
-                "panne_usure_outil": 0,
+                "temp_process_delta": 9.1,
+                "historique_delta": [9.8, 9.6, 9.9, 9.4, 9.3, 9.5, 9.2, 9.0, 9.3, 8.9, 9.1],
             }
         }
     }
 
 
 class RisqueThermOutput(BaseModel):
-    """Résultat de la classification risque thermique pour l'Usine B."""
+    """Résultat de l'évaluation du risque thermique pour l'Usine B."""
 
     usine: str
-    risque_label: int   = Field(..., description="0=Normal · 1=Risque · 2=Critique")
-    risque_nom: str     = Field(..., description="Normal | Risque | Critique")
-    probabilites: dict  = Field(..., description="Probabilité par classe (0, 1, 2)")
-    niveau_alerte: str  = Field(..., description="OK | WARNING | CRITICAL")
+    probabilite_panne_24h: float = Field(...,
+        description="Probabilité estimée d'au moins une panne thermique dans les 24 h (0–1)")
+    risque_label: int = Field(..., description="0 = Normal · 1 = À risque · 2 = Critique")
+    risque_nom: str = Field(..., description="Normal | À risque | Critique")
+    probabilites: dict = Field(..., description="{'Normal': 1 − p, 'À risque': p}")
+    niveau_alerte: str = Field(..., description="OK | WARNING | CRITICAL")
     interpretation: str
+    mode_degrade: bool = Field(...,
+        description="True si aucun historique n'a été fourni : le régime thermique est "
+                    "alors estimé à partir de la seule valeur courante (moins fiable).")
+    nb_sessions_historique: int = Field(..., description="Nombre de sessions d'historique utilisées")
     modele: str

@@ -1,0 +1,3 @@
+# Entraînement des modèles : dépendances de l'API + lecture des données Gold
+-r ../api/requirements.txt
+pyarrow==18.1.0

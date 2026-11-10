@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 import requests
 
 import config
+import shell
 import store
 from ui_utils import bouton_clique
 import kpi_engine
@@ -37,7 +38,7 @@ PORT       = 8051
 SITE_LABEL = USINE_LABELS[USINE_ID]
 DOMINANT   = USINE_DOMINANT_PROBLEM[USINE_ID]
 
-DEFAULT_THEME_MODE = 'dark'
+DEFAULT_THEME_MODE = 'light'
 
 # ─────────────────────────────────────────────────────────────
 # INITIALISATION DASH
@@ -67,7 +68,7 @@ def ensure_simulator_started():
 # ALERT MEMORY
 # ─────────────────────────────────────────────────────────────
 _ALERT_MEMORY = {}
-_ALERT_TTL    = {'CRITICAL': 999999, 'WARNING': 10, 'INFO': 6}
+_ALERT_TTL    = {'CRITICAL': 30, 'WARNING': 10, 'INFO': 6}
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -80,7 +81,7 @@ def _safe_text(value) -> str:
     return txt
 
 def _fmt_pct(val: float) -> str:
-    return f"{val * 100:.1f}%"
+    return f"{val * 100:.1f} %".replace(".", ",")
 
 def _fmt_trs_color(trs: float, theme: dict) -> str:
     if trs >= 0.90: return theme['ok']
@@ -93,80 +94,13 @@ def _rgba(hex_color: str, alpha: float) -> str:
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return f'rgba({r},{g},{b},{alpha})'
 
-def _soft_theme(mode: str) -> dict:
-    base = get_theme(mode or 'dark')
-    if mode == 'light':
-        premium = {
-            'bg_primary': '#f4f6f8', 'bg_secondary': '#e9edf2',
-            'bg_card': 'rgba(255,255,255,0.96)', 'bg_surface': '#f8fafc',
-            'bg_sidebar': 'rgba(255,255,255,0.94)',
-            'text_primary': '#101828', 'text_secondary': '#475467',
-            'text_muted': '#667085', 'border': 'rgba(16,24,40,0.08)',
-            'accent_blue': '#315ea8', 'accent_purple': '#4f5f9f',
-            'accent_cyan': '#3f7f8f', 'accent_green': '#2e8b57',
-            'accent_orange': '#b7791f', 'ok': '#2f855a',
-            'warning': '#b7791f', 'critical': '#b54747',
-            'chart_fill': 'rgba(49,94,168,0.10)',
-            'glass': 'rgba(255,255,255,0.72)',
-        }
-    else:
-        premium = {
-            'bg_primary': '#071018', 'bg_secondary': '#0b1620',
-            'bg_card': 'rgba(15,24,34,0.97)', 'bg_surface': '#111c28',
-            'bg_sidebar': 'rgba(10,18,27,0.98)',
-            'text_primary': '#ecf2f8', 'text_secondary': '#b0bcc9',
-            'text_muted': '#7d8a98', 'border': 'rgba(255,255,255,0.07)',
-            'accent_blue': '#5b7fa3', 'accent_purple': '#6b7394',
-            'accent_cyan': '#5b8f95', 'accent_green': '#4d8c6f',
-            'accent_orange': '#b68a52', 'ok': '#4d8c6f',
-            'warning': '#b68a52', 'critical': '#b85c5c',
-            'chart_fill': 'rgba(91,127,163,0.10)',
-            'glass': 'rgba(255,255,255,0.025)',
-        }
-    return {**base, **premium}
+def _soft_theme(mode: str | None = None) -> dict:
+    return shell.theme()
 
-def _theme_vars(theme: dict) -> dict:
-    return {
-        '--bg-primary'   : theme['bg_primary'],
-        '--bg-secondary' : theme.get('bg_secondary', theme['bg_primary']),
-        '--bg-card'      : theme['bg_card'],
-        '--bg-surface'   : theme['bg_surface'],
-        '--bg-sidebar'   : theme.get('bg_sidebar', theme['bg_card']),
-        '--text-primary' : theme['text_primary'],
-        '--text-secondary': theme['text_secondary'],
-        '--text-muted'   : theme['text_muted'],
-        '--border'       : theme['border'],
-        '--accent-blue'  : theme['accent_blue'],
-        '--accent-purple': theme['accent_purple'],
-        '--accent-cyan'  : theme.get('accent_cyan', theme['accent_blue']),
-        '--accent-green' : theme.get('accent_green', theme['ok']),
-        '--accent-orange': theme.get('accent_orange', theme['warning']),
-        '--ok'           : theme['ok'],
-        '--warning'      : theme['warning'],
-        '--critical'     : theme['critical'],
-        '--chart-fill'   : theme['chart_fill'],
-        '--glass'        : theme.get('glass', 'rgba(255,255,255,0.04)'),
-    }
 
 def _statut_config(statut: str, theme: dict) -> dict:
-    mapping = {
-        'CRITICAL': {'color': theme['critical'], 'bg': _rgba(theme['critical'], 0.12),
-                     'border': _rgba(theme['critical'], 0.28), 'label': 'Critical',
-                     'dot': theme['critical']},
-        'WARNING':  {'color': theme['warning'],  'bg': _rgba(theme['warning'],  0.12),
-                     'border': _rgba(theme['warning'],  0.28), 'label': 'Attention',
-                     'dot': theme['warning']},
-        'OK':       {'color': theme['ok'],        'bg': _rgba(theme['ok'],       0.12),
-                     'border': _rgba(theme['ok'],       0.22), 'label': 'Normal',
-                     'dot': theme['ok']},
-        'INIT':     {'color': theme['text_muted'],'bg': _rgba('#94a3b8', 0.10),
-                     'border': theme['border'],                'label': 'Init',
-                     'dot': theme['text_muted']},
-    }
-    return mapping.get(statut, {
-        'color': theme['text_muted'], 'bg': _rgba('#94a3b8', 0.08),
-        'border': theme['border'], 'label': statut, 'dot': theme['text_muted'],
-    })
+    return shell.statut_config(statut, theme)
+
 
 def _get_persistent_alerts(all_alerts):
     now = time.time()
@@ -194,11 +128,11 @@ def _plot_layout(theme: dict, title: str = '', height: int = 280) -> dict:
     return dict(
         paper_bgcolor=theme.get('paper_bgcolor', theme['bg_card']),
         plot_bgcolor=theme.get('plot_bgcolor',  theme['bg_surface']),
-        font=dict(family='Inter, sans-serif', color=theme['text_muted'], size=10),
+        font=dict(family=shell.FONT, color=theme['text_muted'], size=12),
         margin=dict(l=40, r=16, t=36, b=32),
         height=height,
         title=dict(text=title,
-                   font=dict(size=11, color=theme['text_secondary']),
+                   font=dict(size=13, color=theme['text_secondary']),
                    x=0.0, xanchor='left', pad=dict(l=4)),
         showlegend=False,
         hovermode='x unified',
@@ -211,123 +145,14 @@ def _axis(theme: dict, title: str = '') -> dict:
     return dict(
         gridcolor=theme.get('chart_grid', theme['border']),
         linecolor=theme['border'],
-        tickfont=dict(size=9, color=theme['text_muted']),
-        title=dict(text=title, font=dict(size=9, color=theme['text_muted'])),
+        tickfont=dict(size=11, color=theme['text_muted']),
+        title=dict(text=title, font=dict(size=11, color=theme['text_muted'])),
         showgrid=True, zeroline=False,
     )
 
 # ─────────────────────────────────────────────────────────────
 # COMPOSANTS SHELL
 # ─────────────────────────────────────────────────────────────
-
-def build_sidebar(theme: dict) -> html.Div:
-    return html.Div(className='sidebar', children=[
-        html.Div(className='sidebar-top', children=[
-            html.Div(className='brand-lockup', children=[
-                html.Div(className='brand-logo', children=[
-                    html.Div(className='brand-logo-stem brand-logo-stem-left'),
-                    html.Div(className='brand-logo-stem brand-logo-stem-mid'),
-                    html.Div(className='brand-logo-stem brand-logo-stem-right'),
-                ]),
-                html.Div('MECHA', className='brand-text'),
-            ]),
-            html.Div(className='nav-stack', children=[
-                html.A(
-                    html.Div(className='nav-pill',
-                             children=[html.Div(className='nav-icon')]),
-                    href='http://localhost:8050', title='Group Dashboard'
-                ),
-                html.Div(className='nav-pill active',
-                         children=[html.Div(className='nav-icon')],
-                         title=SITE_LABEL),
-            ]),
-        ]),
-        html.Div(className='sidebar-top', children=[
-            html.Div(className='nav-pill',
-                     children=[html.Div(className='nav-icon')]),
-        ]),
-    ])
-
-
-def build_topbar(theme: dict, ts_str: str) -> html.Div:
-    state    = store.get_current_state(USINE_ID)
-    statut   = state.get('statut_global', 'INIT')
-    sc       = _statut_config(statut, theme)
-    nb_alert = state.get('nb_alertes_actives', 0)
-    return html.Div(className='topbar', children=[
-        html.Div(className='topbar-left', children=[
-            html.Div(className='search-shell', children=[
-                html.Div(className='search-dot'),
-                html.Span(_safe_text(SITE_LABEL), className='search-text'),
-            ]),
-        ]),
-        html.Div(className='topbar-right', children=[
-            html.Div(children=[
-                html.Span('● ', style={'color': sc['dot'], 'fontSize': '8px'}),
-                html.Span(sc['label'],
-                          style={'fontSize': '11px', 'color': sc['color'], 'fontWeight': '600'}),
-            ], style={
-                'display': 'flex', 'alignItems': 'center', 'gap': '4px',
-                'padding': '4px 10px', 'borderRadius': '999px',
-                'border': f"1px solid {sc['border']}", 'background': sc['bg'],
-            }),
-            html.Div(
-                f"{'⚠ ' if nb_alert > 0 else ''}{nb_alert} alert{'s' if nb_alert != 1 else ''}",
-                style={
-                    'fontSize': '11px', 'fontWeight': '600',
-                    'padding': '4px 10px', 'borderRadius': '999px',
-                    'border': f"1px solid {theme['border']}",
-                    'color': theme['critical'] if nb_alert > 0 else theme['text_muted'],
-                    'background': theme.get('glass', 'rgba(255,255,255,0.03)'),
-                }
-            ),
-            html.Div(className='profile-chip', children=[
-                html.Div('A', className='avatar'),
-                html.Div(className='profile-meta', children=[
-                    html.Div('Site Manager', className='profile-name'),
-                    html.Div(_safe_text(USINE_ID), className='profile-role'),
-                ]),
-            ]),
-        ]),
-    ])
-
-
-def build_hero(theme: dict, ts_str: str) -> html.Div:
-    state  = store.get_current_state(USINE_ID)
-    trs    = state.get('TRS', 0.0)
-    statut = state.get('statut_global', 'INIT')
-    sc     = _statut_config(statut, theme)
-    return html.Div(className='page-hero', children=[
-        html.Div(children=[
-            html.Div('INDUSTRIAL SITE', className='eyebrow'),
-            html.H1(_safe_text(SITE_LABEL), className='hero-title'),
-            html.Div(_safe_text(DOMINANT),  className='hero-subtitle'),
-            html.Div(className='meta-row', children=[
-                html.Div(className='meta-badge', children=[
-                    html.Div(className='live-dot'),
-                    html.Span('Live monitoring'),
-                ]),
-                html.Div(className='meta-badge',
-                         children=[html.Span(f'Simulated time · {ts_str}')]),
-                html.Div(className='meta-badge', children=[
-                    html.Span(f'TRS · {_fmt_pct(trs)}',
-                              style={'color': _fmt_trs_color(trs, theme)}),
-                ]),
-            ]),
-        ]),
-        html.Div(className='hero-actions', children=[
-            html.Div(children=[
-                html.Span('● ', style={'color': sc['dot'], 'fontSize': '10px'}),
-                html.Span(sc['label'], style={'fontWeight': '700'}),
-            ], style={
-                'display': 'flex', 'alignItems': 'center', 'gap': '6px',
-                'padding': '8px 16px', 'borderRadius': '12px',
-                'border': f"1px solid {sc['border']}", 'background': sc['bg'],
-                'color': sc['color'], 'fontSize': '12px', 'fontWeight': '700',
-            }),
-        ]),
-    ])
-
 
 def build_alert_banner(persistent_alerts: list, theme: dict) -> html.Div:
     if not persistent_alerts:
@@ -340,8 +165,8 @@ def build_alert_banner(persistent_alerts: list, theme: dict) -> html.Div:
         'INFO'    : theme.get('accent_cyan', theme['accent_blue']),
     }
     color = color_map.get(sev, theme['text_muted'])
-    icon  = {'CRITICAL': '✕', 'WARNING': '⚠', 'INFO': 'ℹ'}.get(sev, '·')
-    extra = f"  +{len(persistent_alerts)-1} more" if len(persistent_alerts) > 1 else ""
+    icon  = {'CRITICAL': '!', 'WARNING': '!', 'INFO': 'i'}.get(sev, '·')
+    extra = f"  +{len(persistent_alerts)-1} autres" if len(persistent_alerts) > 1 else ""
     return html.Div(className='alert-banner', style={
         'background': _rgba(color, 0.08), 'borderColor': _rgba(color, 0.22),
     }, children=[
@@ -352,7 +177,7 @@ def build_alert_banner(persistent_alerts: list, theme: dict) -> html.Div:
                       style={'color': theme['text_primary'],
                              'fontWeight': '600', 'fontSize': '12px'}),
             html.Span(extra,
-                      style={'color': theme['text_muted'], 'fontSize': '11px',
+                      style={'color': theme['text_muted'], 'fontSize': '13px',
                              'marginLeft': '8px'}),
         ]),
     ])
@@ -386,24 +211,21 @@ def build_kpi_strip(state: dict, aggs: dict, theme: dict) -> html.Div:
             ]))
         return html.Div(className='metric-card', children=children)
 
-    return html.Div(style={
-        'display': 'grid', 'gridTemplateColumns': 'repeat(4,1fr)',
-        'gap': '12px', 'marginBottom': '16px',
-    }, children=[
-        card('TRS Current', _fmt_pct(trs),
-             f'1h avg · {_fmt_pct(trs_1h)}',
-             _fmt_trs_color(trs, theme), trs * 100),
-        card('Scrap Rate', _fmt_pct(rebut),
-             f'1h avg · {_fmt_pct(rebut_1h)}',
+    return html.Div(className='kpi-strip', children=[
+        card('TRS actuel', _fmt_pct(trs),
+             f'Moyenne 1 h · {_fmt_pct(trs_1h)}',
+             _fmt_trs_color(trs, theme)),
+        card('Taux de rebut', _fmt_pct(rebut),
+             f'Moyenne 1 h · {_fmt_pct(rebut_1h)}',
              theme['critical'] if rebut > 0.08 else
              theme['warning']  if rebut > 0.05 else theme['ok']),
-        card('Tool Wear', f'{usure:.1f}%',
-             f'{nb_pan} failure(s) / 1h',
+        card('Usure outil', f'{usure:.1f}%',
+             f'{nb_pan} panne(s) sur 1 h',
              theme['critical'] if usure > 90 else
              theme['warning']  if usure > 75 else theme['text_primary'],
              usure),
-        card('Energy / session', f'{energie:.2f} kWh',
-             'Current session', theme['accent_blue']),
+        card('Énergie par session', f'{energie:.2f} kWh',
+             'Session en cours', theme['accent_blue']),
     ])
 
 # ─────────────────────────────────────────────────────────────
@@ -413,11 +235,11 @@ def build_kpi_strip(state: dict, aggs: dict, theme: dict) -> html.Div:
 def build_machine_grid(theme: dict) -> html.Div:
     machines = store.get_machine_states(USINE_ID)
     statut_labels = {
-        'EN_PRODUCTION': ('Running',     theme['ok']),
-        'ARRET':         ('Stopped',     theme['critical']),
+        'EN_PRODUCTION': ('En production',     theme['ok']),
+        'ARRET':         ('À l’arrêt',     theme['critical']),
         'MAINTENANCE':   ('Maintenance', theme['warning']),
-        'STANDBY':       ('Standby',     theme['text_muted']),
-        'INIT':          ('Init',        theme['text_muted']),
+        'STANDBY':       ('En attente',     theme['text_muted']),
+        'INIT':          ('Démarrage',        theme['text_muted']),
     }
     cards = []
     for m_id, m_state in machines.items():
@@ -435,17 +257,17 @@ def build_machine_grid(theme: dict) -> html.Div:
                 'display': 'flex', 'justifyContent': 'space-between',
                 'alignItems': 'center', 'marginBottom': '10px',
             }, children=[
-                html.Span(m_id, style={'fontWeight': '700', 'fontSize': '13px',
+                html.Span(m_id, style={'fontWeight': '600', 'fontSize': '13px',
                                        'color': theme['text_primary']}),
                 html.Span(label, style={
-                    'fontSize': '10px', 'fontWeight': '700', 'color': color,
-                    'padding': '2px 8px', 'borderRadius': '999px',
+                    'fontSize': '12px', 'fontWeight': '600', 'color': color,
+                    'padding': '2px 8px', 'borderRadius': '6px',
                     'border': f'1px solid {_rgba(color, 0.3)}',
                     'background': _rgba(color, 0.1),
                 }),
             ]),
             html.Div(className='bar-row', children=[
-                html.Span('W', className='bar-label'),
+                html.Span('Usure', className='bar-label'),
                 html.Div(className='bar-track', children=[
                     html.Div(className='bar-fill',
                              style={'width': f'{min(usure,100):.0f}%',
@@ -453,16 +275,15 @@ def build_machine_grid(theme: dict) -> html.Div:
                 ]),
                 html.Span(f'{usure:.0f}%', className='bar-value'),
             ]),
-            html.Div(f'Scrap · {rebut*100:.1f}%',
-                     style={'marginTop': '6px', 'fontSize': '10px',
+            html.Div(f'Rebut · {rebut*100:.1f} %',
+                     style={'marginTop': '6px', 'fontSize': '12px',
                             'color': theme['text_muted']}),
         ]))
 
     return html.Div(children=[
-        html.Div('Machine Status', style={
-            'fontSize': '11px', 'fontWeight': '700',
-            'color': theme['text_muted'], 'textTransform': 'uppercase',
-            'letterSpacing': '0.1em', 'marginBottom': '10px',
+        html.Div('État des machines', style={
+            'fontSize': '13px', 'fontWeight': '600',
+            'color': theme['text_muted'], 'marginBottom': '10px',
         }),
         html.Div(style={
             'display': 'grid', 'gridTemplateColumns': 'repeat(2,1fr)', 'gap': '10px',
@@ -498,9 +319,9 @@ def build_trs_chart(theme: dict) -> dcc.Graph:
         ))
         if ma:
             fig.add_trace(go.Scatter(
-                x=ts, y=ma, mode='lines', name='Moving avg',
+                x=ts, y=ma, mode='lines', name='Moyenne mobile',
                 line=dict(color=theme.get('accent_green', theme['ok']), width=2),
-                hovertemplate='MA : %{y:.3f}<extra></extra>',
+                hovertemplate='Moyenne mobile : %{y:.3f}<extra></extra>',
             ))
     fig.add_hline(y=lcl, line_dash='dot', line_color=theme['critical'], line_width=1,
                   annotation_text=f'LCL {lcl:.2f}',
@@ -508,14 +329,14 @@ def build_trs_chart(theme: dict) -> dcc.Graph:
                   annotation_position='bottom right')
     fig.add_hline(y=TRS_SEUIL_ACCEPTABLE, line_dash='dot',
                   line_color=theme['warning'], line_width=1,
-                  annotation_text='Target 85%',
+                  annotation_text='Objectif 85 %',
                   annotation_font_size=9, annotation_font_color=theme['warning'],
                   annotation_position='top right')
-    layout = _plot_layout(theme, 'TRS — Real-time trend', height=260)
+    layout = _plot_layout(theme, 'TRS — évolution en temps réel', height=260)
     layout['xaxis']      = _axis(theme)
     layout['yaxis']      = {**_axis(theme, 'TRS'), 'range': [0.60, 1.05]}
     layout['showlegend'] = True
-    layout['legend']     = dict(font=dict(size=9, color=theme['text_muted']),
+    layout['legend']     = dict(font=dict(size=11, color=theme['text_muted']),
                                 bgcolor='rgba(0,0,0,0)', orientation='h', x=0, y=1.12)
     fig.update_layout(layout)
     return dcc.Graph(figure=fig, config={'displayModeBar': False})
@@ -540,10 +361,10 @@ def build_wear_scrap_chart(theme: dict) -> dcc.Graph:
                         row_heights=[0.55, 0.45], vertical_spacing=0.06)
     if rebut:
         fig.add_trace(go.Scatter(
-            x=ts, y=rebut, mode='lines', name='Scrap rate',
+            x=ts, y=rebut, mode='lines', name='Taux de rebut',
             line=dict(color=theme['critical'], width=1.4),
             fill='tozeroy', fillcolor=_rgba(theme['critical'], 0.07),
-            hovertemplate='Scrap : %{y:.3f}<extra></extra>',
+            hovertemplate='Rebut : %{y:.3f}<extra></extra>',
         ), row=1, col=1)
         fig.add_hline(y=ucl_r, line_dash='dot', line_color=theme['warning'],
                       line_width=1, row=1, col=1,
@@ -552,23 +373,23 @@ def build_wear_scrap_chart(theme: dict) -> dcc.Graph:
                       annotation_position='top right')
     if usure:
         fig.add_trace(go.Scatter(
-            x=ts, y=usure, mode='lines', name='Tool wear %',
+            x=ts, y=usure, mode='lines', name='Usure outil (%)',
             line=dict(color=theme['warning'], width=1.4),
             fill='tozeroy', fillcolor=_rgba(theme['warning'], 0.07),
-            hovertemplate='Wear : %{y:.1f}%<extra></extra>',
+            hovertemplate='Usure : %{y:.1f}%<extra></extra>',
         ), row=2, col=1)
         fig.add_hline(y=USURE_SEUIL_CRITIQUE * 100, line_dash='dot',
                       line_color=theme['critical'], line_width=1, row=2, col=1,
-                      annotation_text='Critical 90%',
+                      annotation_text='Critique 90 %',
                       annotation_font_size=9, annotation_font_color=theme['critical'],
                       annotation_position='top right')
-    layout = _plot_layout(theme, 'Scrap Rate vs Tool Wear — Causal view', height=320)
+    layout = _plot_layout(theme, 'Taux de rebut et usure outil', height=320)
     layout['xaxis2']     = _axis(theme)
     layout['xaxis']      = _axis(theme)
-    layout['yaxis']      = {**_axis(theme, 'Scrap'), 'range': [0, max(ucl_r * 2.5, 0.15)]}
-    layout['yaxis2']     = {**_axis(theme, 'Wear %'), 'range': [0, 105]}
+    layout['yaxis']      = {**_axis(theme, 'Taux de rebut'), 'range': [0, max(ucl_r * 2.5, 0.15)]}
+    layout['yaxis2']     = {**_axis(theme, 'Usure (%)'), 'range': [0, 105]}
     layout['showlegend'] = True
-    layout['legend']     = dict(font=dict(size=9, color=theme['text_muted']),
+    layout['legend']     = dict(font=dict(size=11, color=theme['text_muted']),
                                 bgcolor='rgba(0,0,0,0)', orientation='h', x=0, y=1.08)
     fig.update_layout(layout)
     return dcc.Graph(figure=fig, config={'displayModeBar': False})
@@ -586,8 +407,8 @@ def build_tab_overview(state: dict, aggs: dict, theme: dict) -> html.Div:
             html.Div(className='panel', style={'marginBottom': '14px'}, children=[
                 html.Div(className='panel-head', children=[
                     html.Div(children=[
-                        html.Div('TRS Monitoring', className='panel-title'),
-                        html.Div('Real-time OEE with SPC control limits',
+                        html.Div('Suivi du TRS', className='panel-title'),
+                        html.Div('TRS en temps réel et limites de contrôle statistique',
                                  className='panel-subtitle'),
                     ]),
                 ]),
@@ -597,8 +418,8 @@ def build_tab_overview(state: dict, aggs: dict, theme: dict) -> html.Div:
             html.Div(className='panel', children=[
                 html.Div(className='panel-head', children=[
                     html.Div(children=[
-                        html.Div('Scrap Rate vs Tool Wear', className='panel-title'),
-                        html.Div('Key causal relationship — Usine A dominant pattern',
+                        html.Div('Taux de rebut et usure outil', className='panel-title'),
+                        html.Div('Relation de cause à effet — signal principal de l’usine A',
                                  className='panel-subtitle'),
                     ]),
                 ]),
@@ -628,12 +449,12 @@ def build_tab_maintenance(state: dict, theme: dict) -> html.Div:
             mode='gauge+number', value=usure_pct,
             domain={'x': [0, 1], 'y': [0, 1]},
             title={'text': m_id,
-                   'font': {'size': 11, 'color': theme['text_secondary']}},
+                   'font': {'size': 13, 'color': theme['text_secondary']}},
             number={'suffix': '%', 'font': {'size': 20, 'color': color}},
             gauge={
                 'axis': {'range': [0, 100], 'tickwidth': 1,
                          'tickcolor': theme['text_muted'],
-                         'tickfont': {'size': 8}},
+                         'tickfont': {'size': 10}},
                 'bar': {'color': color, 'thickness': 0.22},
                 'bgcolor': theme['bg_surface'], 'borderwidth': 0,
                 'steps': [
@@ -661,8 +482,8 @@ def build_tab_maintenance(state: dict, theme: dict) -> html.Div:
             'background': theme['bg_surface'], 'padding': '12px', 'textAlign': 'center',
         }, children=[
             dcc.Graph(figure=gauge_usure(m_id, u), config={'displayModeBar': False}),
-            html.Div(f'Est. replacement in ~{est_h}h',
-                     style={'fontSize': '10px', 'color': c_est,
+            html.Div(f'Remplacement estimé dans ~{est_h} h',
+                     style={'fontSize': '12px', 'color': c_est,
                             'fontWeight': '600', 'marginTop': '4px'}),
         ]))
 
@@ -671,9 +492,8 @@ def build_tab_maintenance(state: dict, theme: dict) -> html.Div:
             'borderRadius': '12px', 'border': f"1px solid {theme['border']}",
             'padding': '14px', 'background': theme['bg_surface'],
         }, children=[
-            html.Div(title, style={'fontSize': '10px', 'color': theme['text_muted'],
-                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
-            html.Div(str(value), style={'fontSize': '22px', 'fontWeight': '700',
+            html.Div(title, style={'fontSize': '12px', 'color': theme['text_muted'], 'fontWeight': '600'}),
+            html.Div(str(value), style={'fontSize': '22px', 'fontWeight': '600',
                                         'color': color, 'marginTop': '6px'}),
         ])
 
@@ -681,13 +501,13 @@ def build_tab_maintenance(state: dict, theme: dict) -> html.Div:
         html.Div(style={'display': 'grid', 'gridTemplateColumns': 'repeat(4,1fr)',
                         'gap': '12px', 'marginBottom': '16px'}, children=gauges),
         html.Div(className='panel', style={'padding': '16px'}, children=[
-            html.Div('Maintenance Summary', className='panel-title',
+            html.Div('Synthèse maintenance', className='panel-title',
                      style={'marginBottom': '12px'}),
             html.Div(style={'display': 'grid', 'gridTemplateColumns': 'repeat(3,1fr)',
                             'gap': '10px'}, children=[
-                stat_card('Active machine',          _safe_text(machine_id), theme['text_primary']),
-                stat_card('Tool replacements today', remplacement,           theme['accent_blue']),
-                stat_card('Failures last 7 days',    nb_pannes_7j,
+                stat_card('Machine active',          _safe_text(machine_id), theme['text_primary']),
+                stat_card('Changements d’outil aujourd’hui', remplacement,           theme['accent_blue']),
+                stat_card('Pannes sur 7 jours',    nb_pannes_7j,
                           theme['warning'] if nb_pannes_7j > 3 else theme['ok']),
             ]),
         ]),
@@ -715,7 +535,7 @@ def build_tab_quality(state: dict, theme: dict) -> html.Div:
                                'color': theme['text_primary'], 'fontWeight': '600'}),
                 html.Td(f"{r['taux_rebut']*100:.2f}%",
                         style={'padding': '8px 12px', 'fontSize': '12px',
-                               'color': color, 'fontWeight': '700', 'textAlign': 'right'}),
+                               'color': color, 'fontWeight': '600', 'textAlign': 'right'}),
             ], style={'borderBottom': f"1px solid {theme['border']}"}))
 
     def summary_card(title, value, color):
@@ -723,45 +543,44 @@ def build_tab_quality(state: dict, theme: dict) -> html.Div:
             'borderRadius': '12px', 'border': f"1px solid {theme['border']}",
             'padding': '12px', 'background': theme['bg_surface'],
         }, children=[
-            html.Div(title, style={'fontSize': '10px', 'color': theme['text_muted'],
-                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
-            html.Div(value, style={'fontSize': '26px', 'fontWeight': '700',
+            html.Div(title, style={'fontSize': '12px', 'color': theme['text_muted'], 'fontWeight': '600'}),
+            html.Div(value, style={'fontSize': '26px', 'fontWeight': '600',
                                    'color': color, 'marginTop': '6px'}),
         ])
 
     return html.Div(style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr',
                             'gap': '16px'}, children=[
         html.Div(className='panel', style={'padding': '16px'}, children=[
-            html.Div('Quality Summary', className='panel-title',
+            html.Div('Synthèse qualité', className='panel-title',
                      style={'marginBottom': '12px'}),
             html.Div(style={'display': 'grid', 'gridTemplateColumns': 'repeat(2,1fr)',
                             'gap': '10px', 'marginBottom': '12px'}, children=[
-                summary_card('Scrap rate',    f"{taux_rebut*100:.2f}%", rebut_color),
-                summary_card('Parts scrapped', str(pieces_rebut),       theme['text_primary']),
+                summary_card('Taux de rebut',    f"{taux_rebut*100:.2f}%", rebut_color),
+                summary_card('Pièces rebutées', str(pieces_rebut),       theme['text_primary']),
             ]),
             html.Div(
-                f'Active reference : {_safe_text(type_piece)}  ·  Team : {_safe_text(equipe)}',
-                style={'fontSize': '11px', 'color': theme['text_muted'], 'marginTop': '8px'},
+                f'Référence en cours : {_safe_text(type_piece)}  ·  Équipe : {_safe_text(equipe)}',
+                style={'fontSize': '13px', 'color': theme['text_muted'], 'marginTop': '8px'},
             ),
         ]),
         html.Div(className='panel', style={'padding': '16px'}, children=[
-            html.Div('Scrap by Reference', className='panel-title',
+            html.Div('Rebut par référence', className='panel-title',
                      style={'marginBottom': '12px'}),
             html.Table(style={'width': '100%', 'borderCollapse': 'collapse'}, children=[
                 html.Thead(html.Tr([
-                    html.Th('Reference',
-                            style={'fontSize': '10px', 'color': theme['text_muted'],
+                    html.Th('Référence',
+                            style={'fontSize': '12px', 'color': theme['text_muted'],
                                    'textAlign': 'left', 'padding': '6px 12px',
-                                   'fontWeight': '700', 'textTransform': 'uppercase'}),
-                    html.Th('Avg Scrap',
-                            style={'fontSize': '10px', 'color': theme['text_muted'],
+                                   'fontWeight': '600'}),
+                    html.Th('Rebut moyen',
+                            style={'fontSize': '12px', 'color': theme['text_muted'],
                                    'textAlign': 'right', 'padding': '6px 12px',
-                                   'fontWeight': '700', 'textTransform': 'uppercase'}),
+                                   'fontWeight': '600'}),
                 ])),
                 html.Tbody(rows if rows else [html.Tr(html.Td(
-                    'Building history...', colSpan=2,
+                    'Historique en cours de constitution…', colSpan=2,
                     style={'color': theme['text_muted'], 'padding': '12px',
-                           'fontSize': '11px', 'textAlign': 'center'},
+                           'fontSize': '13px', 'textAlign': 'center'},
                 ))]),
             ]),
         ]),
@@ -793,20 +612,20 @@ def build_alerts_side(theme: dict) -> html.Div:
                     'alignItems': 'center', 'marginBottom': '4px',
                 }, children=[
                     html.Span(_safe_text(row.get('label', '')),
-                              style={'fontSize': '11px', 'fontWeight': '700', 'color': color}),
-                    html.Span(ts_s, style={'fontSize': '10px', 'color': theme['text_muted']}),
+                              style={'fontSize': '13px', 'fontWeight': '600', 'color': color}),
+                    html.Span(ts_s, style={'fontSize': '12px', 'color': theme['text_muted']}),
                 ]),
                 html.Div(_safe_text(row.get('message_court', '')),
-                         style={'fontSize': '11px', 'color': theme['text_secondary'],
+                         style={'fontSize': '13px', 'color': theme['text_secondary'],
                                 'lineHeight': '1.4'}),
             ]))
     else:
-        alert_items.append(html.Div('No active alerts', style={
+        alert_items.append(html.Div('Aucune alerte active', style={
             'color': theme['ok'], 'fontSize': '12px', 'padding': '12px',
             'textAlign': 'center', 'fontWeight': '600',
         }))
     return html.Div(className='panel', style={'padding': '16px'}, children=[
-        html.Div('Active Alerts', className='panel-title', style={'marginBottom': '12px'}),
+        html.Div('Alertes actives', className='panel-title', style={'marginBottom': '12px'}),
         html.Div(alert_items),
     ])
 
@@ -838,34 +657,34 @@ def build_tab_alerts(theme: dict) -> html.Div:
             }, children=[
                 html.Div(children=[
                     html.Span(_safe_text(row.get('label', sev)),
-                              style={'fontSize': '12px', 'fontWeight': '700', 'color': color}),
+                              style={'fontSize': '12px', 'fontWeight': '600', 'color': color}),
                     html.Span(f" · {_safe_text(row.get('machine_id',''))}",
-                              style={'fontSize': '11px', 'color': theme['text_muted']}),
+                              style={'fontSize': '13px', 'color': theme['text_muted']}),
                 ]),
                 html.Div(children=[
-                    html.Span(ts_s, style={'fontSize': '10px', 'color': theme['text_muted'],
+                    html.Span(ts_s, style={'fontSize': '12px', 'color': theme['text_muted'],
                                            'marginRight': '8px'}),
                     html.Span(_safe_text(statut), style={
-                        'fontSize': '10px', 'fontWeight': '700',
+                        'fontSize': '12px', 'fontWeight': '600',
                         'color': color if is_active else theme['ok'],
-                        'padding': '2px 8px', 'borderRadius': '999px',
+                        'padding': '2px 8px', 'borderRadius': '6px',
                         'border': f"1px solid {_rgba(color if is_active else theme['ok'], 0.3)}",
                         'background': _rgba(color if is_active else theme['ok'], 0.1),
                     }),
                 ]),
             ]),
             html.Div(_safe_text(row.get('message_court', '')),
-                     style={'fontSize': '11px', 'color': theme['text_secondary'],
+                     style={'fontSize': '13px', 'color': theme['text_secondary'],
                             'marginBottom': '6px', 'lineHeight': '1.4'}),
             html.Div(_safe_text(row.get('recommandation', '')),
-                     style={'fontSize': '10px', 'color': theme['text_muted'],
+                     style={'fontSize': '12px', 'color': theme['text_muted'],
                             'fontStyle': 'italic'}),
         ])
 
     active_items = (
         [alert_row(row, True) for _, row in actives.iterrows()]
         if not actives.empty else
-        [html.Div('No active alerts', style={
+        [html.Div('Aucune alerte active', style={
             'color': theme['ok'], 'padding': '16px',
             'textAlign': 'center', 'fontSize': '12px', 'fontWeight': '600',
         })]
@@ -873,7 +692,7 @@ def build_tab_alerts(theme: dict) -> html.Div:
     hist_items = (
         [alert_row(row, row.get('statut') == 'ACTIVE') for _, row in history.iterrows()]
         if not history.empty else
-        [html.Div('No alert history yet', style={
+        [html.Div('Aucun historique d’alerte pour l’instant', style={
             'color': theme['text_muted'], 'padding': '16px',
             'textAlign': 'center', 'fontSize': '12px',
         })]
@@ -881,11 +700,11 @@ def build_tab_alerts(theme: dict) -> html.Div:
     return html.Div(style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr',
                             'gap': '16px'}, children=[
         html.Div(className='panel', style={'padding': '16px'}, children=[
-            html.Div('Active Alerts', className='panel-title', style={'marginBottom': '12px'}),
+            html.Div('Alertes actives', className='panel-title', style={'marginBottom': '12px'}),
             html.Div(active_items),
         ]),
         html.Div(className='panel', style={'padding': '16px'}, children=[
-            html.Div('Alert History (last 30)', className='panel-title',
+            html.Div('Historique des alertes (30 dernières)', className='panel-title',
                      style={'marginBottom': '12px'}),
             html.Div(hist_items, style={'maxHeight': '500px', 'overflowY': 'auto'}),
         ]),
@@ -913,12 +732,12 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
     # ── Panneau injection de panne ────────────────────────────
     fault_active = active_fault is not None
     status_color = theme['critical'] if fault_active else theme['ok']
-    status_text  = f'● PANNE ACTIVE : {active_fault}' if fault_active else '○ Simulateur en cours'
+    status_text  = f'Panne injectée : {active_fault}' if fault_active else 'Simulateur en cours'
 
     def _fault_btn(label, bid, color):
         return html.Button(label, id=bid, n_clicks=0, style={
-            'fontSize': '11px', 'fontWeight': '700', 'padding': '6px 16px',
-            'borderRadius': '999px', 'border': f'1px solid {_rgba(color, 0.4)}',
+            'fontSize': '13px', 'fontWeight': '600', 'padding': '6px 16px',
+            'borderRadius': '6px', 'border': f'1px solid {_rgba(color, 0.4)}',
             'background': _rgba(color, 0.12), 'color': color, 'cursor': 'pointer',
         })
 
@@ -927,7 +746,7 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
             html.Div(children=[
                 html.Div('Injection de panne · Démonstration', className='panel-title'),
                 html.Div(status_text, style={
-                    'fontSize': '11px', 'fontWeight': '700',
+                    'fontSize': '13px', 'fontWeight': '600',
                     'color': status_color, 'marginTop': '2px',
                 }),
             ]),
@@ -935,12 +754,12 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
         html.Div(style={'padding': '12px 16px', 'display': 'flex', 'gap': '10px',
                         'flexWrap': 'wrap', 'alignItems': 'center'}, children=[
             _fault_btn('Usure critique (92%)', 'fault-btn-usure-A',  theme['warning']),
-            _fault_btn('🔴 Arrêt production',  'fault-btn-arret-A',  theme['critical']),
-            _fault_btn('✓ Reprendre simulateur','fault-btn-clear-A', theme['ok']),
+            _fault_btn('Arrêt production',  'fault-btn-arret-A',  theme['critical']),
+            _fault_btn('Reprendre le simulateur','fault-btn-clear-A', theme['ok']),
             html.Div(
                 'Le simulateur continue — les champs injectés remplacent ses valeurs jusqu\'à "Reprendre".',
-                style={'fontSize': '10px', 'color': theme['text_muted'],
-                       'fontStyle': 'italic', 'flexBasis': '100%'},
+                style={'fontSize': '12px', 'color': theme['text_muted'],
+                       'flexBasis': '100%'},
             ),
         ]),
     ])
@@ -1001,11 +820,11 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
             mode='gauge+number',
             value=rul_val,
             domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': 'RUL (sessions)', 'font': {'size': 11, 'color': theme['text_secondary']}},
+            title={'text': 'Sessions restantes', 'font': {'size': 13, 'color': theme['text_secondary']}},
             number={'font': {'size': 28, 'color': gauge_color}},
             gauge={
                 'axis': {'range': [0, max_rul], 'tickwidth': 1,
-                         'tickcolor': theme['text_muted'], 'tickfont': {'size': 8}},
+                         'tickcolor': theme['text_muted'], 'tickfont': {'size': 10}},
                 'bar': {'color': gauge_color, 'thickness': 0.22},
                 'bgcolor': theme['bg_surface'], 'borderwidth': 0,
                 'steps': [
@@ -1038,10 +857,10 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
     }, children=[
         # Badge alerte
         html.Div(style={'display': 'flex', 'alignItems': 'center', 'gap': '8px'}, children=[
-            html.Span('●', style={'color': alerte_color, 'fontSize': '10px'}),
+            html.Span('●', style={'color': alerte_color, 'fontSize': '12px'}),
             html.Span(alerte, style={
-                'fontSize': '11px', 'fontWeight': '800', 'color': alerte_color,
-                'padding': '3px 10px', 'borderRadius': '999px',
+                'fontSize': '13px', 'fontWeight': '600', 'color': alerte_color,
+                'padding': '3px 10px', 'borderRadius': '6px',
                 'background': alerte_bg, 'border': f'1px solid {_rgba(alerte_color, 0.3)}',
             }),
         ]) if api_ok else html.Div(),
@@ -1053,10 +872,9 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
                 'padding': '14px', 'border': f"1px solid {theme['border']}",
                 'textAlign': 'center',
             }, children=[
-                html.Div('Sessions restantes', style={'fontSize': '10px', 'color': theme['text_muted'],
-                                                       'textTransform': 'uppercase', 'fontWeight': '700'}),
+                html.Div('Sessions restantes', style={'fontSize': '12px', 'color': theme['text_muted'], 'fontWeight': '600'}),
                 html.Div(f'{rul:.0f}' if api_ok else '—',
-                         style={'fontSize': '30px', 'fontWeight': '800',
+                         style={'fontSize': '30px', 'fontWeight': '600',
                                 'color': alerte_color if api_ok else theme['text_muted']}),
             ]),
             html.Div(style={
@@ -1064,10 +882,9 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
                 'padding': '14px', 'border': f"1px solid {theme['border']}",
                 'textAlign': 'center',
             }, children=[
-                html.Div('Heures restantes', style={'fontSize': '10px', 'color': theme['text_muted'],
-                                                     'textTransform': 'uppercase', 'fontWeight': '700'}),
+                html.Div('Heures restantes', style={'fontSize': '12px', 'color': theme['text_muted'], 'fontWeight': '600'}),
                 html.Div(f'{rul_h:.1f}h' if api_ok else '—',
-                         style={'fontSize': '30px', 'fontWeight': '800',
+                         style={'fontSize': '30px', 'fontWeight': '600',
                                 'color': alerte_color if api_ok else theme['text_muted']}),
             ]),
         ]) if api_ok else html.Div(),
@@ -1075,7 +892,7 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
         # Interprétation
         html.Div(interpreta if api_ok else err_msg, style={
             'fontSize': '12px', 'color': theme['text_secondary'],
-            'lineHeight': '1.6', 'fontStyle': 'italic',
+            'lineHeight': '1.6', 
         }),
     ])
 
@@ -1086,10 +903,9 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
             'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
             'borderLeft': f"3px solid {theme['accent_blue']}" if highlight else '',
         }, children=[
-            html.Div(label, style={'fontSize': '9px', 'color': theme['text_muted'],
-                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div(label, style={'fontSize': '11px', 'color': theme['text_muted'], 'fontWeight': '600'}),
             html.Div(f"{payload.get(label.lower().replace(' ', '_'), '—')}", style={
-                'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary'],
+                'fontSize': '13px', 'fontWeight': '600', 'color': theme['text_primary'],
             }),
         ])
 
@@ -1101,45 +917,41 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
             'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
             'borderLeft': f"3px solid {theme['accent_blue']}",
         }, children=[
-            html.Div('Usure outil', style={'fontSize': '9px', 'color': theme['text_muted'],
-                                           'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div('Usure outil', style={'fontSize': '11px', 'color': theme['text_muted'], 'fontWeight': '600'}),
             html.Div(f"{payload['usure_cumulee_pct']:.1f}%",
-                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['accent_blue']}),
+                     style={'fontSize': '13px', 'fontWeight': '600', 'color': theme['accent_blue']}),
         ]),
         html.Div(style={
             'padding': '8px 12px', 'background': theme['bg_surface'],
             'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
         }, children=[
-            html.Div('TRS', style={'fontSize': '9px', 'color': theme['text_muted'],
-                                   'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div('TRS', style={'fontSize': '11px', 'color': theme['text_muted'], 'fontWeight': '600'}),
             html.Div(f"{payload['TRS']*100:.1f}%",
-                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+                     style={'fontSize': '13px', 'fontWeight': '600', 'color': theme['text_primary']}),
         ]),
         html.Div(style={
             'padding': '8px 12px', 'background': theme['bg_surface'],
             'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
         }, children=[
-            html.Div('Cycle', style={'fontSize': '9px', 'color': theme['text_muted'],
-                                     'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div('Cycle', style={'fontSize': '11px', 'color': theme['text_muted'], 'fontWeight': '600'}),
             html.Div(f"{payload['temps_cycle_min']:.1f} min",
-                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+                     style={'fontSize': '13px', 'fontWeight': '600', 'color': theme['text_primary']}),
         ]),
         html.Div(style={
             'padding': '8px 12px', 'background': theme['bg_surface'],
             'borderRadius': '8px', 'border': f"1px solid {theme['border']}",
         }, children=[
-            html.Div('Dérive cycle', style={'fontSize': '9px', 'color': theme['text_muted'],
-                                            'textTransform': 'uppercase', 'fontWeight': '700'}),
+            html.Div('Dérive cycle', style={'fontSize': '11px', 'color': theme['text_muted'], 'fontWeight': '600'}),
             html.Div(f"{payload['derive_cycle_pct']:.1f}%",
-                     style={'fontSize': '13px', 'fontWeight': '700', 'color': theme['text_primary']}),
+                     style={'fontSize': '13px', 'fontWeight': '600', 'color': theme['text_primary']}),
         ]),
     ])
 
     source_badge = html.Div(
-        '🔴 PANNE INJECTÉE' if fault_active else '📡 Simulateur',
+        'Panne injectée' if fault_active else 'Simulateur',
         style={
-            'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
-            'borderRadius': '999px',
+            'fontSize': '12px', 'fontWeight': '600', 'padding': '3px 10px',
+            'borderRadius': '6px',
             'color': theme['critical'] if fault_active else theme['text_muted'],
             'background': _rgba(theme['critical'] if fault_active else theme['text_muted'], 0.10),
             'border': f"1px solid {_rgba(theme['critical'] if fault_active else theme['text_muted'], 0.25)}",
@@ -1151,18 +963,18 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
         html.Div(className='panel', style={'marginBottom': '14px'}, children=[
             html.Div(className='panel-head', children=[
                 html.Div(children=[
-                    html.Div('AI · Maintenance Prédictive — RUL Outil', className='panel-title'),
+                    html.Div('Maintenance prédictive — durée de vie de l’outil', className='panel-title'),
                     html.Div(
-                        f'Remaining Useful Life · {modele_info}' if api_ok
-                        else 'Remaining Useful Life · modèle indisponible',
+                        f'Durée de vie restante de l’outil · {modele_info}' if api_ok
+                        else 'Durée de vie restante de l’outil · modèle indisponible',
                         className='panel-subtitle',
                     ),
                 ]),
                 html.Div(style={'display': 'flex', 'gap': '8px', 'alignItems': 'center'}, children=[
                     source_badge,
                     html.Div('MSPR 841', style={
-                        'fontSize': '10px', 'fontWeight': '700', 'padding': '3px 10px',
-                        'borderRadius': '999px', 'color': theme['accent_purple'],
+                        'fontSize': '12px', 'fontWeight': '600', 'padding': '3px 10px',
+                        'borderRadius': '6px', 'color': theme['accent_purple'],
                         'background': _rgba(theme['accent_purple'], 0.10),
                         'border': f"1px solid {_rgba(theme['accent_purple'], 0.25)}",
                     }),
@@ -1183,7 +995,7 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
             html.Div(
                 '⚠ Modèle entraîné sur données simulées : erreur moyenne d\'environ une session '
                 '(30 min). Recalibrage sur données terrain nécessaire avant mise en production.',
-                style={'fontSize': '10px', 'color': theme['text_muted'],
+                style={'fontSize': '12px', 'color': theme['text_muted'],
                        'marginTop': '10px', 'fontStyle': 'italic'},
             ),
         ]),
@@ -1193,17 +1005,16 @@ def build_tab_ai_A(state: dict, theme: dict, active_fault: str | None = None) ->
 # ─────────────────────────────────────────────────────────────
 # LAYOUT — dcc.Store et tab-bar-container HORS du contenu
 # ─────────────────────────────────────────────────────────────
-app.layout = html.Div(
-    id='root-A',
-    style={'minHeight': '100vh'},
-    children=[
-        dcc.Interval(id='interval-A', interval=1000, n_intervals=0),
-        dcc.Store(id='tab-store-A', data='overview'),  # ← persistant, jamais recréé
-        dcc.Store(id='fault-store-A', data=None),  # nom de la panne active ou None
-        html.Div(id='page-content-A'),
-        html.Div(id='tab-bar-container-A'),             # ← tab bar dans son propre div
-    ]
-)
+app.layout = shell.racine([
+    dcc.Interval(id='interval-A', interval=1000, n_intervals=0),
+    dcc.Store(id='tab-store-A', data='overview'),
+    dcc.Store(id='fault-store-A', data=None),   # panne injectée, ou None
+    html.Div(id='nav-A', className='nav-zone'),
+    html.Div(id='haut-A'),
+    # barre d'onglets dans son propre conteneur : elle n'est pas recréée à chaque tick
+    html.Div(id='tab-bar-container-A', className='onglets-zone'),
+    html.Main(id='page-content-A', className='page-wrap'),
+], id_racine='root-A')
 
 # ─────────────────────────────────────────────────────────────
 # CALLBACK 1 — Switch onglet (déclenché par clics uniquement)
@@ -1236,41 +1047,21 @@ def switch_tab_A(n1, n2, n3, n4, n5):
     Input('tab-store-A', 'data'),
 )
 def update_tab_bar_A(active_tab):
-    theme = _soft_theme(DEFAULT_THEME_MODE)
-
-    def tab_btn(label, tab_id, btn_id):
-        is_active = active_tab == tab_id
-        return html.Button(label, id=btn_id, n_clicks=0, style={
-            'background' : _rgba(theme['accent_blue'], 0.12) if is_active else 'transparent',
-            'border'     : f"1px solid {_rgba(theme['accent_blue'], 0.25) if is_active else theme['border']}",
-            'color'      : theme['accent_blue'] if is_active else theme['text_muted'],
-            'borderRadius': '10px', 'padding': '6px 16px', 'fontSize': '11px',
-            'fontWeight' : '700', 'cursor': 'pointer',
-            'fontFamily' : 'Inter, sans-serif',
-        })
-
-    return html.Div(style={
-        'display'       : 'flex',
-        'gap'           : '8px',
-        'padding'       : '10px 22px',
-        'borderBottom'  : f"1px solid {theme['border']}",
-        'background'    : theme.get('bg_sidebar', theme['bg_card']),
-        'position'      : 'sticky',
-        'top'           : '57px',
-        'zIndex'        : '15',
-    }, children=[
-        tab_btn('Overview',       'overview',    'tab-btn-overview-A'),
-        tab_btn('Maintenance',    'maintenance', 'tab-btn-maintenance-A'),
-        tab_btn('Quality',        'quality',     'tab-btn-quality-A'),
-        tab_btn('Alerts',         'alerts',      'tab-btn-alerts-A'),
-        tab_btn('AI Predictions', 'ai',          'tab-btn-ai-A'),
-    ])
+    return shell.barre_onglets([
+        ('Vue d’ensemble', 'overview', 'tab-btn-overview-A'),
+        ('Maintenance', 'maintenance', 'tab-btn-maintenance-A'),
+        ('Qualité', 'quality', 'tab-btn-quality-A'),
+        ('Alertes', 'alerts', 'tab-btn-alerts-A'),
+        ('Prédictions IA', 'ai', 'tab-btn-ai-A'),
+    ], active_tab)
 
 # ─────────────────────────────────────────────────────────────
 # CALLBACK 3 — Contenu principal (interval uniquement,
 #              tab-store en State → ne déclenche pas de reset)
 # ─────────────────────────────────────────────────────────────
 @app.callback(
+    Output('nav-A', 'children'),
+    Output('haut-A', 'children'),
     Output('page-content-A', 'children'),
     Input('interval-A', 'n_intervals'),
     State('tab-store-A', 'data'),        # ← State, pas Input
@@ -1284,11 +1075,11 @@ def update_page_A(n, active_tab, active_fault):
     all_alts   = store.get_active_alerts(USINE_ID)
     persistent = _get_persistent_alerts(all_alts)
 
-    ts_str = 'N/A'
+    ts_str = '—'
     sim    = store.get_sim_state(USINE_ID)
     ts     = sim.get('timestamp_simule')
     if ts and hasattr(ts, 'strftime'):
-        ts_str = ts.strftime('%d %b %Y · %H:%M')
+        ts_str = ts.strftime('%d/%m/%Y · %H:%M')
 
     if active_tab == 'maintenance':
         tab_content = build_tab_maintenance(state, theme)
@@ -1301,26 +1092,21 @@ def update_page_A(n, active_tab, active_fault):
     else:
         tab_content = build_tab_overview(state, aggs, theme)
 
-    return html.Div(
-        className='theme-root',
-        style=_theme_vars(theme),
-        children=[html.Div(className='app-shell', children=[
-            build_sidebar(theme),
-            html.Div(className='main-panel', children=[
-                build_topbar(theme, ts_str),
-                html.Div(className='page-wrap', children=[
-                    build_hero(theme, ts_str),
-                    build_alert_banner(persistent, theme),
-                    build_kpi_strip(state, aggs, theme),
-                    tab_content,                    # ← tab_bar supprimée ici
-                    html.Div(
-                        f"MECHA Monitoring System · Site {USINE_ID} · Port {PORT}",
-                        className='footer-note'
-                    ),
-                ]),
-            ]),
-        ])],
-    )
+    haut = html.Div(className='page-wrap haut', children=[
+        shell.entete(
+            _safe_text(SITE_LABEL),
+            f'Point de vigilance du site : {_safe_text(DOMINANT).lower()}',
+            ts_str,
+            state.get('statut_global', 'INIT'),
+        ),
+        build_alert_banner(persistent, theme),
+        build_kpi_strip(state, aggs, theme),
+    ])
+    contenu = [
+        tab_content,
+        shell.pied(f'MECHA · Supervision de production · {_safe_text(SITE_LABEL)} · données simulées'),
+    ]
+    return shell.navigation(USINE_ID), haut, contenu
 
 # ─────────────────────────────────────────────────────────────
 # CALLBACK INJECTION DE PANNE — Usine A

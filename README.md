@@ -13,7 +13,7 @@ Projet MSPR EPSI (I1 EISI IA, RNCP 35584) pour l'entreprise fictive MECHA.
 | A — Lyon | Dans combien de temps faut-il changer l'outil de coupe ? | Durée de vie résiduelle (RUL), en sessions de 30 min et en heures |
 | B — Bordeaux | Cette machine risque-t-elle une panne thermique dans les 24 h ? | Probabilité de panne et niveau Normal / À risque / Critique |
 
-Les résultats sont affichés dans l'onglet **AI Predictions** des dashboards des usines A et B.
+Les résultats sont affichés dans l'onglet **Prédictions IA** des dashboards des usines A et B.
 
 ## Démarrage rapide (Docker)
 

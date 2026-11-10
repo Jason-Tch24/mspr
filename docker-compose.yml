@@ -15,8 +15,8 @@
 #   Dashboard Usine C    → http://localhost:8053
 #
 # NOTA : les dashboards usine démarrent leur propre simulateur
-# indépendant (processus séparés). Les liens "Open dashboard"
-# du groupe pointent vers localhost:<port> — ils fonctionnent
+# indépendant (processus séparés). La barre de navigation et les fiches de site
+# de la vue groupe pointent vers <hôte>:<port> — elles fonctionnent
 # car les ports sont mappés 1:1 vers l'hôte.
 # ─────────────────────────────────────────────────────────────
 

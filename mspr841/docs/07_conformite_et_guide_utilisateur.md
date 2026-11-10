@@ -49,7 +49,7 @@
 | Guide utilisateur métier | ✅ | Partie B ci-dessous |
 | Conduite du changement | ✅ | Document 08 |
 | Validation globale et projection de mise en œuvre | ✅ | Documents 05, 06 |
-| Support de soutenance | À produire à partir de ce dossier | — |
+| Support de soutenance | ✅ 16 diapositives avec notes d'orateur | https://claude.ai/artifact/UAK3UVWLGvtSg9tYeo7qVH (lien privé, à partager ou exporter) |
 
 ### A.3 Écarts et plan d'amélioration
 

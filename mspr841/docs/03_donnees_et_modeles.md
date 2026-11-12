@@ -1,10 +1,10 @@
-# 03 — Données et modèles
+# 03. Données et modèles
 
 ## 1. Origine des données
 
 | Couche | Fichier | Contenu | Origine |
 |---|---|---|---|
-| Source | `data/source/ai4i2020.csv` | 10 000 lignes, 14 colonnes | Jeu public **AI4I 2020 Predictive Maintenance** (UCI) |
+| Source | `data/source/ai4i2020.csv` | 10 000 lignes, 14 colonnes | Jeu public AI4I 2020 Predictive Maintenance (UCI) |
 | Bronze | `data/bronze/ai4i_raw.csv`, `ai4i_raw_dirty.csv` | Copie brute + version dégradée volontairement | Script `notebooks/00_bronze.ipynb` |
 | Silver | `data/silver/ai4i_clean.parquet` | Données nettoyées et contrôlées | `notebooks/01_silver.ipynb` |
 | Gold | `data/gold/usine_A.parquet`, `usine_B.parquet`, `usine_C.parquet` | 8 640 sessions de 30 min par usine (du 01/01/2024 au 29/06/2024) | `notebooks/02` à `04` |
@@ -30,9 +30,9 @@ chacune avec un problème dominant.
 
 | Usine | Problème simulé | Règles de simulation |
 |---|---|---|
-| A — Lyon | Usure progressive de l'outil | L'usure augmente à chaque session d'un incrément aléatoire dépendant du type de pièce ; l'outil est remplacé à la limite ; le rebut augmente avec l'usure. |
-| B — Bordeaux | Pannes thermiques groupées, précédées d'une dérive | Delta thermique = 11,5 K − 2,5 × sinus (période 45 jours) + bruit (σ = 0,5 K). Pannes tirées selon un processus de Poisson dont le taux suit la même sinusoïde et est multiplié par 3 sous 8,6 K. Signes avant-coureurs ajoutés ensuite (voir ci-dessous). |
-| C — Toulouse | Instabilité du process | Non utilisée par les modèles du bloc 4. |
+| A (Lyon) | Usure progressive de l'outil | L'usure augmente à chaque session d'un incrément aléatoire dépendant du type de pièce ; l'outil est remplacé à la limite ; le rebut augmente avec l'usure. |
+| B (Bordeaux) | Pannes thermiques groupées, précédées d'une dérive | Delta thermique = 11,5 K − 2,5 × sinus (période 45 jours) + bruit (σ = 0,5 K). Pannes tirées selon un processus de Poisson dont le taux suit la même sinusoïde et est multiplié par 3 sous 8,6 K. Signes avant-coureurs ajoutés ensuite (voir ci-dessous). |
+| C (Toulouse) | Instabilité du process | Non utilisée par les modèles du bloc 4. |
 
 ### Enrichissement de l'usine B : signes avant-coureurs (`mspr841/ml/enrichir_usine_B.py`)
 
@@ -42,21 +42,21 @@ dans `data/gold/enrichissement_usine_B.json`.
 
 | Hypothèse | Règle | Volume |
 |---|---|---|
-| H1 — dégradation avant la panne | 80 % des pannes thermiques sont précédées d'une baisse progressive du delta de 1,2 à 2,5 K, sur les 12 à 36 h qui précèdent | 93 pannes sur 111 |
-| H1 bis — casse brutale | Les 20 % restants surviennent sans signe | 18 pannes |
-| H2 — retour à la normale | Après la panne, l'intervention rétablit le delta en 3 h | — |
-| H3 — fausses dérives | Une dérive sans panne pour quatre pannes : le delta baisse puis revient seul | 28 dérives |
-| H4 — cohérence | Température process, taux de rebut, stabilité, qualité, TRS et limites de contrôle recalculés avec les formules du notebook Gold | 57 % des sessions touchées |
+| H1 : dégradation avant la panne | 80 % des pannes thermiques sont précédées d'une baisse progressive du delta de 1,2 à 2,5 K, sur les 12 à 36 h qui précèdent | 93 pannes sur 111 |
+| H1 bis : casse brutale | Les 20 % restants surviennent sans signe | 18 pannes |
+| H2 : retour à la normale | Après la panne, l'intervention rétablit le delta en 3 h | - |
+| H3 : fausses dérives | Une dérive sans panne pour quatre pannes : le delta baisse puis revient seul | 28 dérives |
+| H4 : cohérence | Température process, taux de rebut, stabilité, qualité, TRS et limites de contrôle recalculés avec les formules du notebook Gold | 57 % des sessions touchées |
 
 Les pannes (dates, nombre, durées) ne sont pas modifiées : seules les mesures qui les
 précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 
 ### Limites connues des données
 
-- **Volume** : 6 mois, 4 machines par usine, 111 pannes thermiques (usine B) et 115 remplacements d'outil (usine A).
-- **Simplifications** : une seule cause dominante par usine ; pas d'effet de l'opérateur, de la matière ou de la saison.
-- **Biais** : l'usure est quasi linéaire ; les pannes thermiques sont en partie aléatoires et leurs signes avant-coureurs sont une hypothèse de simulation. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
-- **Session** : les données sont à la maille de 30 minutes ; aucun signal haute fréquence (vibrations).
+- Volume : 6 mois, 4 machines par usine, 111 pannes thermiques (usine B) et 115 remplacements d'outil (usine A).
+- Simplifications : une seule cause dominante par usine ; pas d'effet de l'opérateur, de la matière ou de la saison.
+- Biais : l'usure est quasi linéaire ; les pannes thermiques sont en partie aléatoires et leurs signes avant-coureurs sont une hypothèse de simulation. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
+- Session : les données sont à la maille de 30 minutes ; aucun signal haute fréquence (vibrations).
 
 ## 2. Dictionnaire de données (couche Gold)
 
@@ -69,26 +69,26 @@ précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 | `equipe` | texte | Matin / Apres-midi / Nuit | Équipe en poste |
 | `temp_air_c` | décimal | °C, ≈ 18 à 29 | Température ambiante |
 | `temp_process_c` | décimal | °C, ≈ 27 à 42 | Température du process |
-| `temp_process_delta` | décimal | K, ≈ 7,5 à 15,5 | Écart process − air. **Un delta bas signale une mauvaise dissipation de chaleur.** |
+| `temp_process_delta` | décimal | K, ≈ 7,5 à 15,5 | Écart process − air. Un delta bas signale une mauvaise dissipation de chaleur. |
 | `delta_ma` (usine B) | décimal | K | Moyenne mobile du delta sur 100 sessions |
 | `vitesse_rotation_rpm` | entier | tr/min, ≈ 1 250 à 1 850 | Vitesse de broche |
 | `couple_nm` | décimal | N·m, 20 à 70 | Couple de coupe |
 | `usure_outil_min` | décimal | minutes | Temps d'usage cumulé de l'outil |
 | `usure_cumulee_pct` | décimal | %, 0 à 90 | Usure rapportée à la durée de vie de l'outil |
-| `remplacement_outil` | 0/1 | — | Outil remplacé pendant la session |
-| `panne_machine` | 0/1 | — | Une panne, toutes causes |
-| `panne_thermique`, `panne_usure_outil`, `panne_puissance`, `panne_surcharge`, `panne_aleatoire` | 0/1 | — | Cause de la panne |
+| `remplacement_outil` | 0/1 | - | Outil remplacé pendant la session |
+| `panne_machine` | 0/1 | - | Une panne, toutes causes |
+| `panne_thermique`, `panne_usure_outil`, `panne_puissance`, `panne_surcharge`, `panne_aleatoire` | 0/1 | - | Cause de la panne |
 | `type_panne` | texte | Aucune, Thermique, Usure outil… | Libellé de la cause |
 | `duree_arret_min` | décimal | minutes | Durée de l'arrêt |
-| `nb_pannes_7j` | entier | — | Pannes sur les 7 jours glissants |
-| `intervention_maintenance` | 0/1 | — | Intervention réalisée |
+| `nb_pannes_7j` | entier | - | Pannes sur les 7 jours glissants |
+| `intervention_maintenance` | 0/1 | - | Intervention réalisée |
 | `temps_cycle_min` | décimal | minutes | Temps de cycle mesuré |
 | `derive_cycle_pct` | décimal | % | Écart au temps de cycle nominal |
 | `pieces_produites`, `pieces_rebutees` | entier | pièces | Production de la session |
 | `taux_rebut` | décimal | 0 à 1 | Part de pièces rebutées |
 | `indice_stabilite_process` | décimal | 0 à 1 | 1 = process stable |
 | `consommation_kwh` | décimal | kWh | Énergie de la session |
-| `rupture_appro` | 0/1 | — | Rupture d'approvisionnement |
+| `rupture_appro` | 0/1 | - | Rupture d'approvisionnement |
 | `disponibilite`, `performance`, `qualite` | décimal | 0 à 1 | Composantes du TRS |
 | `TRS` | décimal | 0 à 1 | Taux de rendement synthétique |
 | `TRS_7j` | décimal | 0 à 1 | TRS moyen sur 7 jours |
@@ -97,94 +97,94 @@ précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 
 La même démarche est appliquée aux deux cas (`mspr841/ml/train_models.py`).
 
-1. **Cible** construite uniquement à partir du futur de la série.
-2. **Variables** définies une seule fois dans `features.py`, utilisées à l'entraînement et par l'API.
-3. **Comparaison** de plusieurs modèles, dont des références simples, comme le demande le sujet.
-4. **Validation temporelle** « walk-forward » (`TimeSeriesSplit`, 5 plis) : on entraîne toujours sur le passé et on teste sur le futur. Un découpage aléatoire laisserait le modèle « voir » le futur.
-5. **Sélection par parcimonie** : on retient le modèle le plus simple dont la performance est à moins de 1 % du meilleur.
-6. **Ré-entraînement** sur tout l'historique, export du modèle et de ses métadonnées.
+1. Cible construite uniquement à partir du futur de la série.
+2. Variables définies une seule fois dans `features.py`, utilisées à l'entraînement et par l'API.
+3. Comparaison de plusieurs modèles, dont des références simples, comme le demande le sujet.
+4. Validation temporelle « walk-forward » (`TimeSeriesSplit`, 5 plis) : on entraîne toujours sur le passé et on teste sur le futur. Un découpage aléatoire laisserait le modèle « voir » le futur.
+5. Sélection par parcimonie : on retient le modèle le plus simple dont la performance est à moins de 1 % du meilleur.
+6. Ré-entraînement sur tout l'historique, export du modèle et de ses métadonnées.
 
-## 4. Usine A — durée de vie résiduelle de l'outil (régression)
+## 4. Usine A : durée de vie résiduelle de l'outil (régression)
 
-- **Cible** : nombre de sessions avant le prochain remplacement d'outil.
-- **Variables** : 11 mesures instantanées (usure cumulée, TRS, temps de cycle, dérive, disponibilité, performance, qualité, consommation, vitesse, couple, taux de rebut).
-- **Volume** : 8 464 sessions.
+- Cible : nombre de sessions avant le prochain remplacement d'outil.
+- Variables : 11 mesures instantanées (usure cumulée, TRS, temps de cycle, dérive, disponibilité, performance, qualité, consommation, vitesse, couple, taux de rebut).
+- Volume : 8 464 sessions.
 
 | Modèle | MAE (sessions) | RMSE | R² |
 |---|---|---|---|
 | Moyenne (référence naïve) | 18,39 | 21,25 | 0,000 |
-| **Linéaire sur l'usure seule** ✅ | **1,05** | 1,35 | 0,996 |
+| Linéaire sur l'usure seule (retenu) | 1,05 | 1,35 | 0,996 |
 | Ridge (11 variables) | 1,05 | 1,35 | 0,996 |
 | Random Forest | 1,09 | 1,41 | 0,996 |
 | Gradient Boosting | 1,08 | 1,38 | 0,996 |
 
-**Interprétation.** L'erreur moyenne est d'environ une session, soit 30 minutes. Les modèles
+Interprétation. L'erreur moyenne est d'environ une session, soit 30 minutes. Les modèles
 complexes n'apportent rien : la durée de vie se déduit presque entièrement de l'usure
 cumulée. Le modèle retenu est donc le plus simple, et le plus facile à expliquer à un
 technicien (« chaque point d'usure consomme une durée connue »).
 
-**Limite.** Ce R² très élevé vient de la simulation, où l'usure progresse presque
+Limite. Ce R² très élevé vient de la simulation, où l'usure progresse presque
 linéairement. Sur des machines réelles (usure non linéaire, casse brutale, changement de
 matière), il faudra s'attendre à une erreur nettement plus forte et les modèles non
 linéaires redeviendront pertinents.
 
-## 5. Usine B — risque de panne thermique à 24 h (classification)
+## 5. Usine B : risque de panne thermique à 24 h (classification)
 
-- **Cible** : « à risque » = au moins une panne thermique dans les 48 sessions suivantes (24 h). La session courante est exclue : on prédit, on ne constate pas.
-- **Variables** : 5 indicateurs du régime thermique — delta courant, moyenne 6 h, moyenne 24 h, minimum 6 h, tendance (moyenne 6 h − moyenne 24 h).
-- **Volume** : 8 592 sessions, dont 41 % « à risque ».
-- **Validation** : 5 plis temporels séparés par un intervalle de 48 sessions, pour qu'aucune session d'entraînement ne recouvre le futur du pli de test.
+- Cible : « à risque » = au moins une panne thermique dans les 48 sessions suivantes (24 h). La session courante est exclue : on prédit, on ne constate pas.
+- Variables : 5 indicateurs du régime thermique : delta courant, moyenne 6 h, moyenne 24 h, minimum 6 h, tendance (moyenne 6 h − moyenne 24 h).
+- Volume : 8 592 sessions, dont 41 % « à risque ».
+- Validation : 5 plis temporels séparés par un intervalle de 48 sessions, pour qu'aucune session d'entraînement ne recouvre le futur du pli de test.
 
 | Modèle | ROC-AUC | PR-AUC | Brier |
 |---|---|---|---|
 | Fréquence de base (référence naïve) | 0,500 | 0,409 | 0,244 |
 | Régression logistique sur le delta instantané | 0,786 | 0,701 | 0,192 |
-| **Régression logistique (5 variables)** ✅ | **0,813** | **0,740** | **0,178** |
+| Régression logistique à 5 variables (retenu) | 0,813 | 0,740 | 0,178 |
 | Random Forest | 0,770 | 0,708 | 0,198 |
 | Gradient Boosting | 0,785 | 0,713 | 0,195 |
 
-**Interprétation.** La régression logistique est à la fois la meilleure et la plus stable
+Interprétation. La régression logistique est à la fois la meilleure et la plus stable
 d'un pli à l'autre ; les ensembles d'arbres sur-apprennent sur ce petit volume. Le modèle
 se comporte comme attendu physiquement : la probabilité de panne augmente quand le delta
 thermique baisse (0,03 à 15,5 K ; 0,29 au nominal de 11,5 K ; 0,82 à 7,6 K, en régime établi).
 Il réagit aussi à la tendance : à 9,5 K, la probabilité est de 0,58 en régime stable et de
 0,86 si ce niveau vient d'être atteint après une dérive de 2 K en 12 h.
 
-### Peut-on faire mieux ? Le plafond théorique, puis l'enrichissement des données
+### Plafond théorique et enrichissement des données
 
 Les données étant simulées, la loi qui génère les pannes est connue. On peut donc calculer
 la performance du meilleur prédicteur possible, celui qui connaîtrait cette loi
 (`mspr841/ml/plafond_theorique.py`, résultat dans `reports/plafond_841.json`).
 
-**Étape 1 — constat sur la simulation d'origine.** Le premier modèle obtenait une ROC-AUC
+Étape 1 : constat sur la simulation d'origine. Le premier modèle obtenait une ROC-AUC
 de 0,738 ; le prédicteur parfait plafonnait à 0,746. Le modèle captait donc déjà 97 % du
 signal prévisible, et aucun changement d'algorithme ne pouvait l'améliorer : l'instant d'une
 panne était tiré au hasard, seul son *taux* dépendait du régime thermique. Variantes testées
 sans gain : moyennes sur 48 h à 7 jours, pente du delta, splines, gradient boosting par
 histogrammes.
 
-**Étape 2 — enrichissement des données.** Pour progresser, il fallait changer les données
+Étape 2 : enrichissement des données. Pour progresser, il fallait changer les données
 et non le modèle. Sur une machine réelle, une panne thermique est le plus souvent précédée
 d'une dégradation progressive. Le script `mspr841/ml/enrichir_usine_B.py` ajoute cette
 hypothèse (détail au §1) sans toucher aux pannes elles-mêmes.
 
 | Usine B | Simulation d'origine | Après enrichissement | Plafond du régime seul |
 |---|---|---|---|
-| ROC-AUC | 0,738 | **0,813** | 0,746 |
-| PR-AUC | 0,609 | **0,740** | 0,611 |
-| Brier (plus bas = mieux) | 0,211 | **0,178** | 0,200 |
-| Précision de l'alerte | 63 % | **70 %** | — |
-| Rappel de l'alerte | 57 % | **62 %** | — |
+| ROC-AUC | 0,738 | 0,813 | 0,746 |
+| PR-AUC | 0,609 | 0,740 | 0,611 |
+| Brier (plus bas = mieux) | 0,211 | 0,178 | 0,200 |
+| Précision de l'alerte | 63 % | 70 % | - |
+| Rappel de l'alerte | 57 % | 62 % | - |
 
 Le modèle dépasse maintenant le plafond du régime seul : l'écart (+0,07 de ROC-AUC) mesure
 ce qu'apporte la dérive du delta avant la panne. L'algorithme et les cinq variables sont
 inchangés ; c'est la variable de tendance qui porte le gain.
 
-**Usine A.** L'erreur moyenne du modèle (1,05 session) est au plancher : le prédicteur
+Usine A. L'erreur moyenne du modèle (1,05 session) est au plancher : le prédicteur
 parfait, estimé sur 20 000 vies d'outil simulées, fait 1,10. Le nombre de sessions restantes
 dépend des pièces qui seront usinées, tirées au hasard. Le modèle A n'a donc pas été modifié.
 
-**Limite à dire au jury.** Le gain du modèle B vient d'une hypothèse de simulation, pas
+Limite à dire au jury. Le gain du modèle B vient d'une hypothèse de simulation, pas
 d'une mesure sur des machines. Si les pannes réelles de MECHA ne sont pas précédées d'une
 dérive, le modèle retombera au niveau du régime seul. C'est la première chose à vérifier
 lors d'un pilote sur site.
@@ -203,10 +203,10 @@ modèle. Lecture sur les prédictions de validation :
 À partir du niveau « À risque », l'alerte détecte 62 % des périodes suivies d'une panne
 (rappel) et se vérifie 70 % du temps (précision).
 
-**Limite.** Le modèle estime un **niveau de risque**, pas l'instant d'une panne : une panne
+Limite. Le modèle estime un niveau de risque, pas l'instant d'une panne : une panne
 sur cinq survient sans signe avant-coureur, et les autres ne sont annoncées que par une
 dérive progressive. Même au niveau « Normal », 24 % des périodes de 24 h contiennent une panne. Le
-modèle sert donc à **prioriser** les contrôles, pas à remplacer la maintenance préventive.
+modèle sert donc à prioriser les contrôles, pas à remplacer la maintenance préventive.
 Un recalibrage sur données terrain est indispensable.
 
 ### Ce qui a été corrigé par rapport au premier PoC
@@ -216,7 +216,7 @@ classait un delta nominal en « Critique » et un delta extrême en « Normal »
 
 1. la classe « Critique » (panne dans les 3 sessions) n'était pas prévisible, les pannes étant aléatoires à cet horizon ;
 2. l'API ne recevait pas les variables d'historique et les remplaçait par des constantes, jamais vues à l'entraînement ;
-3. le scénario de démonstration injectait un delta de 20 K, alors que le risque apparaît quand le delta **baisse**.
+3. le scénario de démonstration injectait un delta de 20 K, alors que le risque apparaît quand le delta baisse.
 
 La cible a été reformulée en « normal / à risque » comme le demande le cahier des charges,
 l'historique est maintenant transmis par le dashboard, et les features sont partagées.
@@ -235,7 +235,7 @@ complet) et `reports/benchmark_841.json`. La CI rejoue cet entraînement à chaq
 
 ## 7. Enjeux RGPD
 
-Le prototype ne traite **aucune donnée personnelle** : données publiques et simulées,
+Le prototype ne traite aucune donnée personnelle : données publiques et simulées,
 identifiants de machines uniquement. Avec des données réelles, les points suivants
 s'appliqueraient.
 

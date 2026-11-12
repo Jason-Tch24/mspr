@@ -1,4 +1,4 @@
-# 04 — Solution applicative d'exploitation des résultats IA
+# 04. Solution applicative d'exploitation des résultats IA
 
 > Compétences visées : *développer une application adaptée à l'environnement technique* et
 > *développer une solution intégrée par le paramétrage et un langage de configuration.*
@@ -7,23 +7,23 @@
 
 Les modèles ne sont jamais consultés directement. Leurs résultats passent par trois étages :
 
-1. **le modèle** produit une valeur brute (une durée, une probabilité) ;
-2. **les règles métier** la transforment en niveau d'alerte et en message d'action ;
-3. **le dashboard** l'affiche à côté des indicateurs que l'équipe suit déjà.
+1. le modèle produit une valeur brute (une durée, une probabilité) ;
+2. les règles métier la transforment en niveau d'alerte et en message d'action ;
+3. le dashboard l'affiche à côté des indicateurs que l'équipe suit déjà.
 
-Le technicien lit « Machine à risque — vérifier le circuit de refroidissement dans le
+Le technicien lit « Machine à risque : vérifier le circuit de refroidissement dans le
 poste », pas « p = 0,58 ».
 
 ## 2. Mécanismes d'intégration
 
 | Échange | Mécanisme | Format |
 |---|---|---|
-| Dashboards → IA | Appel HTTP `POST` à l'API de scoring, délai maximal 2 s | JSON |
-| IA → dashboards | Réponse synchrone | JSON |
-| Entraînement → API | Fichiers de modèle et de métadonnées | joblib + JSON |
-| Données Gold → dashboards et entraînement | Lecture de fichiers | Parquet |
-| Paramétrage → API | Fichier de règles lu au démarrage | JSON |
-| Paramétrage → dashboards | Variable d'environnement `MECHA_API_URL`, constantes de `config.py` | texte, Python |
+| Des dashboards vers l'IA | Appel HTTP `POST` à l'API de scoring, délai maximal 2 s | JSON |
+| De l'IA vers les dashboards | Réponse synchrone | JSON |
+| De l'entraînement vers l'API | Fichiers de modèle et de métadonnées | joblib + JSON |
+| Des données Gold vers les dashboards et l'entraînement | Lecture de fichiers | Parquet |
+| Du paramétrage vers l'API | Fichier de règles lu au démarrage | JSON |
+| Du paramétrage vers les dashboards | Variable d'environnement `MECHA_API_URL`, constantes de `config.py` | texte, Python |
 
 ### Contrat de l'API
 
@@ -37,7 +37,7 @@ Documentation interactive générée automatiquement : `http://localhost:8000/do
 | POST | `/predict/rul` | Durée de vie résiduelle de l'outil (Usine A) |
 | POST | `/predict/risque-thermique` | Risque de panne thermique à 24 h (Usine B) |
 
-**Exemple — Usine A**
+#### Exemple : Usine A
 
 ```bash
 curl -X POST http://localhost:8000/predict/rul \
@@ -52,12 +52,12 @@ curl -X POST http://localhost:8000/predict/rul \
   "rul_heures": 1.1,
   "usure_cumulee_pct": 88.0,
   "niveau_alerte": "CRITICAL",
-  "interpretation": "Remplacement outil IMMINENT — 2 session(s) restante(s) (1.1 h). Planifier l'intervention maintenant.",
+  "interpretation": "Remplacement outil IMMINENT : 2 session(s) restante(s) (1.1 h). Planifier l'intervention maintenant.",
   "modele": "Linéaire sur l'usure seule · MAE=1.052 sessions · R²=0.996"
 }
 ```
 
-**Exemple — Usine B**
+#### Exemple : Usine B
 
 ```bash
 curl -X POST http://localhost:8000/predict/risque-thermique \
@@ -73,7 +73,7 @@ curl -X POST http://localhost:8000/predict/risque-thermique \
   "risque_nom": "Critique",
   "probabilites": {"Normal": 0.198, "À risque": 0.802},
   "niveau_alerte": "CRITICAL",
-  "interpretation": "Risque thermique CRITIQUE — probabilité de panne sous 24 h : 80%. Contrôler le refroidissement sans attendre.",
+  "interpretation": "Risque thermique CRITIQUE : probabilité de panne sous 24 h : 80%. Contrôler le refroidissement sans attendre.",
   "mode_degrade": false,
   "nb_sessions_historique": 3,
   "modele": "Régression logistique · AUC=0.813 · PR-AUC=0.74"
@@ -85,10 +85,10 @@ mauvais type) ; `503` modèles non chargés.
 
 ## 3. Paramétrage applicatif
 
-### 3.1 Règles de l'IA — `mspr841/api/regles_metier.json`
+### 3.1 Règles de l'IA : `mspr841/api/regles_metier.json`
 
 C'est le formalisme de configuration de la solution : un fichier JSON lu par l'API au
-démarrage. Le modifier ne demande **ni développement ni ré-entraînement**.
+démarrage. Le modifier ne demande ni développement ni ré-entraînement.
 
 ```json
 {
@@ -97,7 +97,7 @@ démarrage. Le modifier ne demande **ni développement ni ré-entraînement**.
     "rul_critical_sessions": 10,
     "rul_warning_sessions": 20,
     "messages": {
-      "CRITICAL": "Remplacement outil IMMINENT — {rul:.0f} session(s) restante(s) ({heures:.1f} h). Planifier l'intervention maintenant."
+      "CRITICAL": "Remplacement outil IMMINENT : {rul:.0f} session(s) restante(s) ({heures:.1f} h). Planifier l'intervention maintenant."
     }
   },
   "usine_B": {
@@ -115,10 +115,10 @@ démarrage. Le modifier ne demande **ni développement ni ré-entraînement**.
 | `usine_A.rul_warning_sessions` | 20 (10 h) | En dessous : alerte WARNING | Responsable maintenance |
 | `usine_B.seuil_warning` | 0,45 | Probabilité à partir de laquelle la machine est « À risque » | Responsable maintenance |
 | `usine_B.seuil_critical` | 0,65 | Probabilité à partir de laquelle le risque est « Critique » | Responsable maintenance |
-| `usine_B.horizon_sessions` | 48 (24 h) | Horizon de prédiction — **changer cette valeur impose un ré-entraînement** | Équipe data |
+| `usine_B.horizon_sessions` | 48 (24 h) | Horizon de prédiction : changer cette valeur impose un ré-entraînement | Équipe data |
 | `messages.*` | texte à trous | Phrase d'action affichée ; `{rul}`, `{heures}`, `{proba}` sont remplacés par les valeurs | Maintenance + qualité |
 
-**Règle de transformation** appliquée par l'API :
+Règle de transformation appliquée par l'API :
 
 ```
 Usine A :  RUL ≤ 10 sessions → CRITICAL ;  RUL ≤ 20 → WARNING ;  sinon OK
@@ -126,7 +126,7 @@ Usine A :  RUL ≤ 10 sessions → CRITICAL ;  RUL ≤ 20 → WARNING ;  sinon O
 Usine B :  p ≥ 0,65 → CRITICAL (Critique) ;  p ≥ 0,45 → WARNING (À risque) ;  sinon OK (Normal)
 ```
 
-**Comment choisir les seuils de l'usine B.** Baisser `seuil_warning` détecte plus de pannes
+Comment choisir les seuils de l'usine B. Baisser `seuil_warning` détecte plus de pannes
 mais multiplie les alertes. Le tableau « des probabilités aux niveaux d'alerte » du
 document 03 donne, pour les seuils actuels, la part de sessions en alerte et le taux de
 panne réellement observé ; il est recalculé à chaque entraînement et consultable par
@@ -135,7 +135,7 @@ panne réellement observé ; il est recalculé à chaque entraînement et consul
 Un autre fichier de règles peut être fourni par site grâce à la variable
 `MECHA_REGLES_PATH`, sans reconstruire l'image.
 
-### 3.2 Règles de supervision — `dashboard/config.py`
+### 3.2 Règles de supervision : `dashboard/config.py`
 
 Les alertes temps réel du bloc 3 sont décrites de façon déclarative dans `ALERT_RULES`.
 Chaque règle est un dictionnaire, interprété par le moteur `alert_engine.py` :
@@ -167,8 +167,8 @@ Chaque règle est un dictionnaire, interprété par le moteur `alert_engine.py` 
 Les limites de contrôle (moyenne ± 3 écarts-types, calculées sur janvier 2024, hors pannes)
 sont dans `data/gold/limites_usine_*.json`.
 
-**Complémentarité.** Les règles de supervision réagissent à ce qui **se passe** (un seuil
-est franchi maintenant) ; l'IA estime ce qui **va se passer** (risque sous 24 h, durée
+Complémentarité. Les règles de supervision réagissent à ce qui se passe (un seuil
+est franchi maintenant) ; l'IA estime ce qui va se passer (risque sous 24 h, durée
 restante). Les deux sont affichées dans le même dashboard.
 
 ### 3.3 Fréquences de mise à jour
@@ -189,7 +189,7 @@ session (30 min), et non sur le rafraîchissement de l'écran.
 ### Navigation commune
 
 Les quatre tableaux de bord partagent le même habillage (`dashboard/shell.py`, `dashboard/assets/app.css`) :
-une barre de navigation **Groupe · Usine A · Usine B · Usine C** présente sur chaque écran, avec
+une barre de navigation Groupe · Usine A · Usine B · Usine C présente sur chaque écran, avec
 un point de couleur qui donne l'état de chaque site (vert : normal, orange : à surveiller,
 rouge : critique). Depuis la vue groupe (port 8050), un clic sur la fiche d'un site ouvre le
 tableau de bord de l'usine dans le même onglet. Tous les libellés sont en français.
@@ -202,16 +202,16 @@ tableau de bord de l'usine dans le même onglet. Tous les libellés sont en fran
 | Maintenance | Usure outil, pannes, durées d'arrêt | Technicien, responsable maintenance | Suivre l'état des équipements |
 | Qualité | Taux de rebut, limites de contrôle, dérives | Direction qualité | Détecter une dérive avant la non-conformité |
 | Alertes | Alertes actives et historique | Tous | Savoir ce qui demande une action |
-| **Prédictions IA** | Prédiction du modèle, niveau d'alerte, message d'action, mesures utilisées, modèle et sa performance | Technicien, responsable maintenance | **Décider d'une intervention avant la panne** |
+| Prédictions IA | Prédiction du modèle, niveau d'alerte, message d'action, mesures utilisées, modèle et sa performance | Technicien, responsable maintenance | Décider d'une intervention avant la panne |
 
-### Onglet Prédictions IA — Usine A
+### Onglet Prédictions IA : Usine A
 
 - Jauge de durée de vie résiduelle (sessions et heures).
 - Badge OK / WARNING / CRITICAL et phrase d'action.
 - Mesures envoyées au modèle (usure, TRS, temps de cycle…).
 - Démonstration : « Usure critique (92 %) », « Arrêt production », « Reprendre le simulateur ».
 
-### Onglet Prédictions IA — Usine B
+### Onglet Prédictions IA : Usine B
 
 - Niveau de risque (Normal / À risque / Critique) et probabilité de panne sous 24 h.
 - Nombre de sessions d'historique analysées.
@@ -238,7 +238,7 @@ accès à chaque dashboard d'usine.
 
 Trois extraits à commenter en soutenance.
 
-**a. Une seule définition des variables** (`mspr841/api/features.py`) — utilisée par
+a. Une seule définition des variables (`mspr841/api/features.py`) : utilisée par
 l'entraînement *et* par l'API, ce qui garantit que le modèle reçoit en service ce qu'il a
 appris :
 
@@ -257,7 +257,7 @@ def thermal_features_from_series(valeurs: list[float]) -> dict[str, float]:
     }
 ```
 
-**b. Du score à la décision** (`mspr841/api/main.py`) — le modèle donne une probabilité,
+b. Du score à la décision (`mspr841/api/main.py`) : le modèle donne une probabilité,
 le paramétrage donne le niveau :
 
 ```python
@@ -270,7 +270,7 @@ def niveau_alerte_risque(proba: float) -> str:
     return "OK"
 ```
 
-**c. Tolérance aux pannes côté application** (`dashboard/app_usine_B.py`) — l'IA est un
+c. Tolérance aux pannes côté application (`dashboard/app_usine_B.py`) : l'IA est un
 plus, jamais un point de blocage :
 
 ```python

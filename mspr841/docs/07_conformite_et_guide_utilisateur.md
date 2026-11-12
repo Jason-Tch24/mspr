@@ -1,9 +1,9 @@
-# 07 — Conformité au cahier des charges et guide utilisateur
+# 07. Conformité au cahier des charges et guide utilisateur
 
 > Compétence visée : *vérifier la conformité entre la solution développée et les
 > fonctionnalités attendues, afin de rédiger la documentation orientée utilisateurs.*
 
-## Partie A — Conformité
+## Partie A : Conformité
 
 ### A.1 Besoins exprimés dans le cahier des charges
 
@@ -34,22 +34,22 @@
 
 | Livrable attendu | Statut | Emplacement |
 |---|---|---|
-| Code source versionné sur Git | ✅ | https://github.com/Jason-Tch24/mspr |
-| Jeux de données, données transformées, hypothèses | ✅ | `data/`, `mspr841/ml/enrichir_usine_B.py`, document 03 |
-| Modèles, paramètres, métriques, interprétation | ✅ | `mspr841/api/models/`, document 03 (dont le plafond théorique et l'enrichissement, §5) |
-| Configuration de conteneurisation et instructions | ✅ | `docker-compose.yml`, README, document 06 |
-| Chaîne d'intégration continue | ✅ | `.github/workflows/ci.yml` |
-| Description de la solution applicative | ✅ | Document 04 |
-| Schéma d'architecture | ✅ | Document 02 |
-| Choix techniques, modèles étudiés, limites | ✅ | Documents 02, 03 |
-| Principes de déploiement et d'exploitation | ✅ | Document 06 |
-| Enjeux RGPD | ✅ | Document 03 §7 |
-| Guide d'entretien et synthèse des besoins | ✅ | Document 01 |
-| Compte-rendu des échanges avec le client | ⚠️ version simulée, à corriger par l'équipe avec les échanges réels | Document 01 §6 |
-| Guide utilisateur métier | ✅ | Partie B ci-dessous |
-| Conduite du changement | ✅ | Document 08 |
-| Validation globale et projection de mise en œuvre | ✅ | Documents 05, 06 |
-| Support de soutenance | ✅ 10 diapositives avec notes d'orateur | https://claude.ai/artifact/UAK3UVWLGvtSg9tYeo7qVH (lien privé, à partager ou exporter) |
+| Code source versionné sur Git | Fait | https://github.com/Jason-Tch24/mspr |
+| Jeux de données, données transformées, hypothèses | Fait | `data/`, `mspr841/ml/enrichir_usine_B.py`, document 03 |
+| Modèles, paramètres, métriques, interprétation | Fait | `mspr841/api/models/`, document 03 (dont le plafond théorique et l'enrichissement, §5) |
+| Configuration de conteneurisation et instructions | Fait | `docker-compose.yml`, README, document 06 |
+| Chaîne d'intégration continue | Fait | `.github/workflows/ci.yml` |
+| Description de la solution applicative | Fait | Document 04 |
+| Schéma d'architecture | Fait | Document 02 |
+| Choix techniques, modèles étudiés, limites | Fait | Documents 02, 03 |
+| Principes de déploiement et d'exploitation | Fait | Document 06 |
+| Enjeux RGPD | Fait | Document 03 §7 |
+| Guide d'entretien et synthèse des besoins | Fait | Document 01 |
+| Compte-rendu des échanges avec le client | À corriger : version simulée, à corriger par l'équipe avec les échanges réels | Document 01 §6 |
+| Guide utilisateur métier | Fait | Partie B ci-dessous |
+| Conduite du changement | Fait | Document 08 |
+| Validation globale et projection de mise en œuvre | Fait | Documents 05, 06 |
+| Support de soutenance | Fait : 10 diapositives avec notes d'orateur | https://claude.ai/artifact/UAK3UVWLGvtSg9tYeo7qVH (lien privé, à partager ou exporter) |
 
 ### A.3 Écarts et plan d'amélioration
 
@@ -64,71 +64,71 @@
 
 ---
 
-## Partie B — Guide utilisateur métier
+## Partie B : Guide utilisateur métier
 
 *Destiné aux responsables maintenance et production. À imprimer sur deux pages.*
 
 ### À quoi sert l'outil
 
-L'outil vous aide à **intervenir avant la panne**. Il répond à deux questions :
+L'outil vous aide à intervenir avant la panne. Il répond à deux questions :
 
-- **Usine A** — *Dans combien de temps faut-il changer l'outil de coupe ?*
-- **Usine B** — *Cette machine risque-t-elle une panne thermique dans les 24 heures ?*
+- Usine A : *Dans combien de temps faut-il changer l'outil de coupe ?*
+- Usine B : *Cette machine risque-t-elle une panne thermique dans les 24 heures ?*
 
-Il ne pilote pas les machines et n'arrête rien tout seul : **c'est vous qui décidez.**
+Il ne pilote pas les machines et n'arrête rien tout seul : c'est vous qui décidez.
 
 ### Y accéder
 
-Ouvrez le dashboard de votre usine, puis l'onglet **Prédictions IA** :
+Ouvrez le dashboard de votre usine, puis l'onglet Prédictions IA :
 Usine A `http://<serveur>:8051` · Usine B `http://<serveur>:8052` · Groupe `http://<serveur>:8050`.
 
-### Lire l'écran — Usine A (usure de l'outil)
+### Lire l'écran : Usine A (usure de l'outil)
 
 | Ce que vous voyez | Ce que cela veut dire | Que faire |
 |---|---|---|
-| 🟢 **OK** — plus de 20 sessions restantes (plus de 10 h) | L'outil est en bon état | Rien de particulier |
-| 🟠 **WARNING** — entre 10 et 20 sessions (5 à 10 h) | Le remplacement approche | Préparer l'outil de rechange ; viser le prochain changement de série |
-| 🔴 **CRITICAL** — 10 sessions ou moins (5 h ou moins) | Remplacement imminent | Planifier l'intervention maintenant |
+| OK : plus de 20 sessions restantes (plus de 10 h) | L'outil est en bon état | Rien de particulier |
+| WARNING : entre 10 et 20 sessions (5 à 10 h) | Le remplacement approche | Préparer l'outil de rechange ; viser le prochain changement de série |
+| CRITICAL : 10 sessions ou moins (5 h ou moins) | Remplacement imminent | Planifier l'intervention maintenant |
 
-Une **session** dure 30 minutes. La durée est aussi affichée en heures.
+Une session dure 30 minutes. La durée est aussi affichée en heures.
 Marge d'erreur constatée : environ une session, soit 30 minutes.
 
-### Lire l'écran — Usine B (risque thermique)
+### Lire l'écran : Usine B (risque thermique)
 
 | Ce que vous voyez | Ce que cela veut dire | Que faire |
 |---|---|---|
-| 🟢 **Normal** — probabilité inférieure à 45 % | La machine évacue correctement sa chaleur | Surveillance habituelle |
-| 🟠 **À risque** — de 45 à 65 % | Le refroidissement se dégrade | Vérifier le circuit de refroidissement pendant le poste |
-| 🔴 **Critique** — 65 % ou plus | Forte probabilité de panne sous 24 h | Contrôler le refroidissement sans attendre ; envisager un arrêt planifié |
+| Normal : probabilité inférieure à 45 % | La machine évacue correctement sa chaleur | Surveillance habituelle |
+| À risque : de 45 à 65 % | Le refroidissement se dégrade | Vérifier le circuit de refroidissement pendant le poste |
+| Critique : 65 % ou plus | Forte probabilité de panne sous 24 h | Contrôler le refroidissement sans attendre ; envisager un arrêt planifié |
 
-Le chiffre affiché est la **probabilité qu'au moins une panne thermique survienne dans les
-24 heures**. La mention « *n sessions d'historique analysées* » indique sur combien de
+Le chiffre affiché est la probabilité qu'au moins une panne thermique survienne dans les
+24 heures. La mention « *n sessions d'historique analysées* » indique sur combien de
 mesures passées l'estimation s'appuie : plus il y en a (jusqu'à 47), plus elle est fiable.
 
-> **Repère** : le risque thermique augmente quand l'écart de température entre le process
-> et l'air ambiant **diminue** (valeur normale : environ 11,5 K).
+> Repère : le risque thermique augmente quand l'écart de température entre le process
+> et l'air ambiant diminue (valeur normale : environ 11,5 K).
 
 ### Comment interpréter les résultats
 
-- **Un niveau n'est pas une certitude.** Sur les données d'essai, une panne est survenue
+- Un niveau n'est pas une certitude. Sur les données d'essai, une panne est survenue
   dans les 24 h dans environ 7 cas sur 10 au niveau « Critique », 6 sur 10 au niveau
   « À risque » et 3 sur 10 au niveau « Normal ».
-- **L'outil classe les priorités** : il vous dit où regarder en premier, pas où il est
+- L'outil classe les priorités : il vous dit où regarder en premier, pas où il est
   inutile de regarder.
-- **Croisez avec les autres onglets** : Maintenance (tendance thermique, usure) et Alertes
+- Croisez avec les autres onglets : Maintenance (tendance thermique, usure) et Alertes
   (seuils franchis en ce moment).
-- **Regardez l'évolution** plutôt qu'une valeur isolée : un niveau qui monte sur plusieurs
+- Regardez l'évolution plutôt qu'une valeur isolée : un niveau qui monte sur plusieurs
   heures est un signal plus sûr qu'un pic.
 
 ### Limites et conditions d'usage
 
-- L'outil **ne remplace pas** la maintenance préventive ni votre connaissance des machines.
-- Il a été mis au point sur des **données simulées** : ses seuils devront être réajustés
+- L'outil ne remplace pas la maintenance préventive ni votre connaissance des machines.
+- Il a été mis au point sur des données simulées : ses seuils devront être réajustés
   avec vos retours.
 - Il ne voit que deux types de défaillance : l'usure de l'outil (usine A) et la panne
   thermique (usine B). Il ne détecte pas les casses brutales ni les défauts électriques.
 - Une prédiction faite avec peu d'historique (après un redémarrage) est moins fiable.
-- En cas de doute sur une machine, **la sécurité prime** sur l'indication de l'outil.
+- En cas de doute sur une machine, la sécurité prime sur l'indication de l'outil.
 
 ### En cas de problème
 
@@ -138,4 +138,4 @@ mesures passées l'estimation s'appuie : plus il y en a (jusqu'à 47), plus elle
 | Trop d'alertes, ou pas assez | Les seuils ne conviennent pas à votre atelier | Demander un réglage au référent IA du site |
 | Une alerte ne correspond pas à la réalité | Erreur du modèle ou capteur défaillant | Le signaler au référent IA : ces retours servent à améliorer l'outil |
 
-**Contacts** : référent IA du site · support informatique · responsable maintenance.
+Contacts : référent IA du site · support informatique · responsable maintenance.

@@ -1,4 +1,4 @@
-# 02 — Architecture de la solution
+# 02. Architecture de la solution
 
 > Compétence visée : *concevoir une architecture applicative distribuée ou micro-services,
 > évolutive et tolérante aux pannes, adaptée au système d'information existant.*
@@ -53,7 +53,7 @@ flowchart LR
 ```
 
 Dans le prototype, les sources industrielles sont remplacées par le jeu public AI4I 2020 et
-par des données simulées ; un **simulateur** rejoue les tables Gold comme un flux temps réel.
+par des données simulées ; un simulateur rejoue les tables Gold comme un flux temps réel.
 
 ## 2. Composants
 
@@ -100,9 +100,9 @@ sequenceDiagram
 
 | Critère | Apport de la séparation |
 |---|---|
-| **Stabilité** | Une erreur dans le modèle ou l'API n'arrête pas les dashboards : l'appel a un délai maximal de 2 s et un affichage de repli. La supervision de la production ne dépend jamais de l'IA. |
-| **Efficacité** | Les modèles sont chargés une seule fois au démarrage de l'API ; une prédiction est un calcul en mémoire de quelques millisecondes. Un seul service sert tous les dashboards. |
-| **Pérennité** | Le modèle peut être ré-entraîné ou remplacé sans toucher à l'application, tant que le contrat d'API est respecté. D'autres applications (GMAO, MES, mobile) peuvent consommer la même API. |
+| Stabilité | Une erreur dans le modèle ou l'API n'arrête pas les dashboards : l'appel a un délai maximal de 2 s et un affichage de repli. La supervision de la production ne dépend jamais de l'IA. |
+| Efficacité | Les modèles sont chargés une seule fois au démarrage de l'API ; une prédiction est un calcul en mémoire de quelques millisecondes. Un seul service sert tous les dashboards. |
+| Pérennité | Le modèle peut être ré-entraîné ou remplacé sans toucher à l'application, tant que le contrat d'API est respecté. D'autres applications (GMAO, MES, mobile) peuvent consommer la même API. |
 
 ### Autres décisions
 
@@ -145,7 +145,7 @@ Le prototype remplace certaines briques par des équivalents simples. La cible e
 
 | Brique | Prototype | Cible MECHA |
 |---|---|---|
-| Collecte | Fichiers CSV, simulateur | Passerelles OPC UA / MQTT depuis les automates, bus Kafka (un premier essai Kafka → Prometheus → Grafana existe dans `PoCMSPR/`) |
+| Collecte | Fichiers CSV, simulateur | Passerelles OPC UA / MQTT depuis les automates, bus Kafka (un premier essai Kafka, Prometheus, Grafana existe dans `PoCMSPR/`) |
 | Stockage | Fichiers Parquet | Lac de données + entrepôt, base de séries temporelles pour les capteurs |
 | État applicatif | Mémoire du processus | Redis ou base partagée, pour plusieurs instances |
 | Modèles | Fichiers versionnés dans Git | Registre de modèles (MLflow), suivi de dérive, ré-entraînement planifié |

@@ -1,4 +1,4 @@
-# 09 — Usage de l'intelligence artificielle générative
+# 09. Usage de l'intelligence artificielle générative
 
 Le cahier des charges autorise le recours à un outil d'IA générative, « sous réserve de
 fournir les prompts utilisés et d'expliciter la manière dont ces éléments ont été analysés,
@@ -18,7 +18,7 @@ Plusieurs commits antérieurs du dépôt portent déjà la mention `Co-Authored-
 
 Les prompts sont reproduits tels que saisis, fautes de frappe corrigées.
 
-**Prompt 1 — audit**
+#### Prompt 1 : audit
 
 > je vais faire un projet MSPR je veux le finaliser c'est dans le répertoire que je vais
 > t'envoyer en fait c'est le bloc quatre qu'il faut développer analyse les documents qui
@@ -28,20 +28,20 @@ Les prompts sont reproduits tels que saisis, fautes de frappe corrigées.
 Résultat : tableau d'avancement par compétence de la grille, liste des problèmes du code,
 liste des livrables manquants, ordre de travail proposé.
 
-**Prompt 2 — réalisation**
+#### Prompt 2 : réalisation
 
 > vas-y fais toutes les étapes et place le code sur github
 
 Résultat : les modifications décrites dans ce dossier.
 
-**Prompt 3 — recette à l'écran**
+#### Prompt 3 : recette à l'écran
 
 > fusionne la pull request dans main, navigue et teste l'interface
 
 Résultat : une anomalie trouvée en déroulant la recette dans le navigateur (panne injectée
 sans clic à l'ouverture de l'onglet IA), corrigée et tracée dans le plan de test.
 
-**Prompt 4 — refonte des tableaux de bord**
+#### Prompt 4 : refonte des tableaux de bord
 
 > sur le tableau de bord c'est un peu bizarre, je ne comprends pas tout, il y a des boutons
 > qui ne sont pas câblés, il y a trop de tableaux de bord qui ne sont pas connectés. Quand
@@ -51,7 +51,7 @@ sans clic à l'ouverture de l'onglet IA), corrigée et tracée dans le plan de t
 Résultat : navigation commune aux quatre écrans, libellés en français, habillage unique
 (document 04 §4).
 
-**Prompt 5 — amélioration des modèles**
+#### Prompt 5 : amélioration des modèles
 
 > améliore le modèle qui a été entraîné pour avoir de meilleures performances
 
@@ -61,19 +61,19 @@ de ce que la simulation d'origine permettait (document 03 §5). L'IA a proposé 
 changer les modèles, et a indiqué que seul un changement des données pouvait faire
 progresser les scores, en laissant la décision à l'équipe.
 
-**Prompt 6 — enrichissement des données**
+#### Prompt 6 : enrichissement des données
 
 > je veux que tu le fasses, j'y tiens
 
 Résultat : script `mspr841/ml/enrichir_usine_B.py`, qui ajoute une dérive progressive du
-delta thermique avant 80 % des pannes. ROC-AUC du modèle B : 0,738 → 0,813. Les hypothèses
+delta thermique avant 80 % des pannes. La ROC-AUC du modèle B passe de 0,738 à 0,813. Les hypothèses
 sont décrites au document 03 §1, et la limite (gain issu d'une hypothèse de simulation)
 au §5.
 
 Le document 10 propose, pour chaque livrable, un prompt de reproduction rédigé après coup.
 Il ne remplace pas la liste ci-dessus, qui seule retrace les demandes réellement faites.
 
-> **À compléter par l'équipe** : les prompts des sessions précédentes (pipeline, dashboards,
+> À compléter par l'équipe : les prompts des sessions précédentes (pipeline, dashboards,
 > première API, Docker et CI), si vous les avez conservés.
 
 ## 3. Comment les productions de l'IA ont été vérifiées
@@ -94,10 +94,10 @@ Rien n'a été intégré sur la seule foi du texte généré. Les vérifications
 
 ## 4. Ce qui a été adapté ou écarté
 
-- **Proposition initiale conservée après contrôle** : sélection du modèle le plus simple à performance équivalente. La tolérance a été fixée à 1 % ; avec 2 %, le modèle B retenu aurait ignoré l'historique thermique.
-- **Écarté** : conserver trois classes pour l'usine B. La classe « panne dans les 3 sessions » n'est pas prévisible sur ces données.
-- **Écarté** : annoncer qu'une alerte de supervision se déclenche dans le scénario « Panne imminente ». La limite de contrôle réelle (5,9 K à l'époque, 5,0 K depuis l'enrichissement des données) est plus basse que la valeur injectée (7,6 K) ; le plan de recette a été corrigé.
-- **Signalé comme non fait** : les entretiens avec les métiers sont simulés, et le compte-rendu des échanges avec l'encadrant est une version simulée, à corriger avec les échanges réels (document 01 §6).
+- Proposition initiale conservée après contrôle : sélection du modèle le plus simple à performance équivalente. La tolérance a été fixée à 1 % ; avec 2 %, le modèle B retenu aurait ignoré l'historique thermique.
+- Écarté : conserver trois classes pour l'usine B. La classe « panne dans les 3 sessions » n'est pas prévisible sur ces données.
+- Écarté : annoncer qu'une alerte de supervision se déclenche dans le scénario « Panne imminente ». La limite de contrôle réelle (5,9 K à l'époque, 5,0 K depuis l'enrichissement des données) est plus basse que la valeur injectée (7,6 K) ; le plan de recette a été corrigé.
+- Signalé comme non fait : les entretiens avec les métiers sont simulés, et le compte-rendu des échanges avec l'encadrant est une version simulée, à corriger avec les échanges réels (document 01 §6).
 
 ## 5. Recul critique
 

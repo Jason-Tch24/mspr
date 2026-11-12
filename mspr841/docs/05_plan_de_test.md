@@ -62,7 +62,7 @@ Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
 | B02 | Dissipation dégradée | 7,8 K établi | Niveau `CRITICAL` |
 | B03 | Cohérence physique | 15 → 7,5 K | Probabilité croissante quand le delta baisse |
 | B04 | Mode dégradé | aucune session d'historique | `mode_degrade = true` |
-| B05 | Prise en compte de l'historique | 10,5 K après régime bas / haut | Risque plus élevé après le régime bas |
+| B05 | Prise en compte de l'historique | 9,5 K stable / 9,5 K atteint après une dérive de 2 K en 12 h | Risque plus élevé après la dérive |
 | B06 | Cohérence des probabilités | 10 K | p entre 0 et 1, somme des deux classes = 1 |
 | B07 | Historique trop long | 300 valeurs | Tronqué à 47 |
 | B08 | Entrées invalides (3 variantes) | delta négatif, historique texte, corps vide | `422` |
@@ -120,7 +120,7 @@ Environnement : macOS, Python 3.13, puis rejoué sous Linux / Python 3.11 par la
 | R03 | Retour à la normale | Cliquer « Reprendre le simulateur » | Le badge revient au niveau du simulateur | ✅ 10/11/2026 |
 | R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet Prédictions IA | Niveau, probabilité sous 24 h, nombre de sessions analysées | ✅ 10/11/2026 |
 | R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | ✅ 10/11/2026 |
-| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,9 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | ✅ 10/11/2026 |
+| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,0 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | ✅ 10/11/2026 |
 | R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | ✅ 10/11/2026 |
 | R08 | Reprise de l'IA | `docker compose start api` | L'onglet IA affiche de nouveau une prédiction, sans redémarrer le dashboard | ✅ 10/11/2026 |
 | R09 | Changer un seuil | Passer `seuil_warning` à 0,30 dans `regles_metier.json`, reconstruire l'API | Davantage de sessions classées « À risque » | ☐ à jouer |
@@ -151,8 +151,8 @@ l'ensemble avant la soutenance, sur la machine de démonstration.
 | Critère | Seuil | Résultat | Verdict |
 |---|---|---|---|
 | Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,05 session | ✅ |
-| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,74 | ✅ |
-| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 28 % / 58 % / 69 % | ✅ |
+| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,81 | ✅ |
+| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 54 % / 82 % | ✅ |
 | Tests automatisés | 100 % réussis | 61 / 61 | ✅ |
 | Démarrage en conteneur | API saine, dashboards servis | Vérifié | ✅ |
 | Résistance à l'indisponibilité de l'IA | Dashboard utilisable | Vérifié par le code et R07 | ✅ |

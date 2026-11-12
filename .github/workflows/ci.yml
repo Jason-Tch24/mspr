@@ -60,11 +60,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: python mspr841/ml/train_models.py
+      - run: python mspr841/ml/plafond_theorique.py
       - run: pytest mspr841/tests
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-modeles
-          path: reports/benchmark_841.json
+          path: |
+            reports/benchmark_841.json
+            reports/plafond_841.json
 
   # ── 4. Construction et test des images Docker ───────────────
   docker:

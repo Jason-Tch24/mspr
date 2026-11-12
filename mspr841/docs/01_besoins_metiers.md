@@ -108,15 +108,46 @@ conformité (document 07).
 
 ## 6. Compte-rendu des échanges avec le client (encadrant)
 
-> **À compléter par l'équipe** avec les échanges réellement tenus. Ne pas laisser ce tableau
-> vide le jour de la soutenance.
+> **Échanges simulés — à corriger par l'équipe.** Les trois points ci-dessous sont une
+> proposition plausible, rédigée à partir du cahier des charges et de l'avancement réel du
+> projet. Avant la soutenance : remplacer les dates, les noms et les réponses par ce qui a
+> été réellement dit, et supprimer ce bandeau. Ne pas présenter ce texte au jury comme un
+> compte-rendu réel sans l'avoir corrigé.
 
-| Date | Participants | Questions posées | Réponses / décisions | Impact sur le projet |
-|---|---|---|---|---|
-| … | … | … | … | … |
+**Participants** : l'équipe projet (5 personnes) ; l'encadrant pédagogique, dans le rôle du
+client (Direction industrielle de MECHA). Format : points de 20 à 30 minutes.
 
-Questions à poser en priorité :
-1. Quel est le cas d'usage prioritaire pour MECHA : usure outil, panne thermique, ou les deux ?
-2. Quel délai d'anticipation est attendu par la maintenance ?
-3. Une démonstration sur données simulées suffit-elle pour la validation ?
-4. Quel niveau de détail est attendu sur le déploiement multi-sites ?
+### Point 1 — Cadrage du besoin · [date à renseigner]
+
+| Question posée par l'équipe | Réponse du client | Décision | Impact sur le projet |
+|---|---|---|---|
+| Quel est le cas d'usage prioritaire : usure de l'outil, panne thermique, ou les deux ? | Les arrêts non planifiés sont la priorité. Les deux cas sont pertinents s'ils restent simples à expliquer. | Traiter les deux, un par usine pilote | Usine A : durée de vie de l'outil. Usine B : risque thermique. |
+| Quel délai d'anticipation attend la maintenance ? | Un poste à une journée : assez pour préparer l'intervention sans arrêter la ligne. | Horizon de 24 h pour le risque thermique | Cible du modèle B fixée à « panne dans les 24 h » |
+| Peut-on utiliser des données réelles ? | Non, pour des raisons de confidentialité. Données publiques ou simulées uniquement. | Jeu public AI4I 2020 + simulation | Hypothèses de simulation à documenter (document 03) |
+| Qui utilisera l'outil au quotidien ? | Les techniciens et le responsable maintenance, pas des spécialistes des données. | Résultat sous forme de niveau et de consigne | Trois niveaux d'alerte et une phrase d'action plutôt qu'un score |
+
+### Point 2 — Avancement et choix techniques · [date à renseigner]
+
+| Question posée par l'équipe | Réponse du client | Décision | Impact sur le projet |
+|---|---|---|---|
+| Le modèle le plus simple suffit-il, ou attendez-vous des forêts aléatoires ? | Le sujet demande de les étudier et de justifier le choix, pas de les imposer. | Comparer, puis retenir le plus simple à performance égale | Règle de parcimonie (document 03 §3) |
+| Les seuils d'alerte doivent-ils être modifiables par le métier ? | Oui, sans redéveloppement. Trop de fausses alertes et l'outil sera abandonné. | Seuils dans un fichier de configuration | `regles_metier.json`, relu par l'API |
+| Que doit-il se passer si le service d'IA est indisponible ? | La supervision doit continuer : la production ne s'arrête pas pour un outil d'aide. | L'IA est un service séparé | Architecture en micro-service, message « API indisponible » |
+| Le premier modèle thermique donnait des résultats incohérents. Pouvons-nous reformuler la cible ? | Oui, si la reformulation est expliquée et vérifiable. | Passage de trois classes à « normal / à risque » | Document 03 §5, anomalie tracée au plan de test |
+
+### Point 3 — Validation avant soutenance · [date à renseigner]
+
+| Question posée par l'équipe | Réponse du client | Décision | Impact sur le projet |
+|---|---|---|---|
+| Une démonstration sur données simulées suffit-elle ? | Oui, à condition de dire clairement ce qu'elle prouve et ce qu'elle ne prouve pas. | Réserves écrites dans le dossier | Document 05 §7, section « Limites » du support |
+| Les scores du modèle thermique plafonnaient. Peut-on enrichir la simulation ? | Oui, le sujet l'autorise, si les hypothèses sont réalistes et documentées. | Ajout de signes avant-coureurs avant les pannes | `enrichir_usine_B.py`, document 03 §1 et §5 |
+| Quel niveau de détail attendez-vous sur le déploiement multi-sites ? | Un plan progressif, avec les prérequis et les risques, pas un planning au jour près. | Déploiement en six phases, site pilote d'abord | Document 06 §4 |
+| Qu'attendez-vous de la soutenance ? | Une démonstration qui fonctionne, et que chacun sache expliquer sa partie. | Répétition sur la machine de soutenance | Scénario de démonstration (document 05 §5) |
+
+### Synthèse des décisions
+
+1. Deux cas d'usage, un par usine pilote ; horizon de 24 h pour le risque thermique.
+2. Données publiques et simulées uniquement, hypothèses documentées.
+3. Modèle le plus simple à performance égale ; seuils réglables par le métier.
+4. L'IA est un service séparé : la supervision fonctionne sans elle.
+5. Les limites de la validation sur données simulées sont dites explicitement.

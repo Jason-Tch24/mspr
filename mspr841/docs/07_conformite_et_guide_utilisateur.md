@@ -35,8 +35,8 @@
 | Livrable attendu | Statut | Emplacement |
 |---|---|---|
 | Code source versionné sur Git | ✅ | https://github.com/Jason-Tch24/mspr |
-| Jeux de données, données transformées, hypothèses | ✅ | `data/`, document 03 |
-| Modèles, paramètres, métriques, interprétation | ✅ | `mspr841/api/models/`, document 03 |
+| Jeux de données, données transformées, hypothèses | ✅ | `data/`, `mspr841/ml/enrichir_usine_B.py`, document 03 |
+| Modèles, paramètres, métriques, interprétation | ✅ | `mspr841/api/models/`, document 03 (dont le plafond théorique et l'enrichissement, §5) |
 | Configuration de conteneurisation et instructions | ✅ | `docker-compose.yml`, README, document 06 |
 | Chaîne d'intégration continue | ✅ | `.github/workflows/ci.yml` |
 | Description de la solution applicative | ✅ | Document 04 |
@@ -45,11 +45,11 @@
 | Principes de déploiement et d'exploitation | ✅ | Document 06 |
 | Enjeux RGPD | ✅ | Document 03 §7 |
 | Guide d'entretien et synthèse des besoins | ✅ | Document 01 |
-| Compte-rendu des échanges avec le client | ⚠️ à compléter par l'équipe | Document 01 §6 |
+| Compte-rendu des échanges avec le client | ⚠️ version simulée, à corriger par l'équipe avec les échanges réels | Document 01 §6 |
 | Guide utilisateur métier | ✅ | Partie B ci-dessous |
 | Conduite du changement | ✅ | Document 08 |
 | Validation globale et projection de mise en œuvre | ✅ | Documents 05, 06 |
-| Support de soutenance | ✅ 16 diapositives avec notes d'orateur | https://claude.ai/artifact/UAK3UVWLGvtSg9tYeo7qVH (lien privé, à partager ou exporter) |
+| Support de soutenance | ✅ 10 diapositives avec notes d'orateur | https://claude.ai/artifact/UAK3UVWLGvtSg9tYeo7qVH (lien privé, à partager ou exporter) |
 
 ### A.3 Écarts et plan d'amélioration
 

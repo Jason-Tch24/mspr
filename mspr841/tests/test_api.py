@@ -112,10 +112,11 @@ def test_B04_mode_degrade_sans_historique(client):
 
 
 def test_B05_l_historique_compte(client):
-    """Même mesure courante, régimes différents : le risque doit différer."""
-    apres_regime_bas = _risque(client, 10.5, [8.5] * 47)["probabilite_panne_24h"]
-    apres_regime_haut = _risque(client, 10.5, [13.5] * 47)["probabilite_panne_24h"]
-    assert apres_regime_bas > apres_regime_haut
+    """Même mesure courante : une dérive descendante est plus risquée qu'un régime stable."""
+    stable = _risque(client, 9.5, [9.5] * 47)["probabilite_panne_24h"]
+    derive = [11.5] * 23 + [11.5 - 2 * (i / 24) ** 1.5 for i in range(24)]
+    en_derive = _risque(client, 9.5, derive)["probabilite_panne_24h"]
+    assert en_derive > stable
 
 
 def test_B06_probabilites_coherentes(client):

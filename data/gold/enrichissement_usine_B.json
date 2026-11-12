@@ -1,0 +1,18 @@
+{
+  "source": "usine_B_base.parquet",
+  "graine": 841,
+  "pannes_thermiques": 111,
+  "pannes_annoncees_par_une_derive": 93,
+  "pannes_sans_signe_avant_coureur": 18,
+  "derives_sans_panne": 28,
+  "sessions_modifiees": 4959,
+  "part_des_sessions_modifiees": 0.574,
+  "delta_moyen_avant": 11.491,
+  "delta_moyen_apres": 11.008,
+  "hypotheses": {
+    "H1": "80% des pannes précédées d'une baisse de 1.2 à 2.5 K sur 24 à 72 sessions",
+    "H2": "retour à la normale en 6 sessions après la panne",
+    "H3": "une dérive sans panne pour 4 pannes",
+    "H4": "rebut, stabilité, qualité, TRS et limites SPC recalculés"
+  }
+}

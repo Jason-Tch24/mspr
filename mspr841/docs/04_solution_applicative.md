@@ -68,15 +68,15 @@ curl -X POST http://localhost:8000/predict/risque-thermique \
 ```json
 {
   "usine": "Usine_B",
-  "probabilite_panne_24h": 0.783,
+  "probabilite_panne_24h": 0.802,
   "risque_label": 2,
   "risque_nom": "Critique",
-  "probabilites": {"Normal": 0.217, "À risque": 0.783},
+  "probabilites": {"Normal": 0.198, "À risque": 0.802},
   "niveau_alerte": "CRITICAL",
-  "interpretation": "Risque thermique CRITIQUE — probabilité de panne sous 24 h : 78%. Contrôler le refroidissement sans attendre.",
+  "interpretation": "Risque thermique CRITIQUE — probabilité de panne sous 24 h : 80%. Contrôler le refroidissement sans attendre.",
   "mode_degrade": false,
   "nb_sessions_historique": 3,
-  "modele": "Régression logistique · AUC=0.738 · PR-AUC=0.609"
+  "modele": "Régression logistique · AUC=0.813 · PR-AUC=0.74"
 }
 ```
 

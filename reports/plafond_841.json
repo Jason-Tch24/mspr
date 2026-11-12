@@ -1,0 +1,34 @@
+{
+  "usine_A": {
+    "modele_retenu": "Linéaire sur l'usure seule",
+    "modele": {
+      "MAE": 1.052,
+      "RMSE": 1.348
+    },
+    "plafond_theorique": {
+      "MAE": 1.103,
+      "RMSE": 1.487,
+      "vies_d_outil_simulees": 20000
+    },
+    "lecture": "L'erreur du modèle est au niveau de l'erreur incompressible de la simulation (l'écart entre les deux tient à l'échantillon) : le nombre de sessions restantes dépend des pièces qui seront usinées, tirées au hasard. Aucun modèle ne peut faire mieux sur ces données."
+  },
+  "usine_B": {
+    "modele_retenu": "Régression logistique",
+    "modele": {
+      "ROC_AUC": 0.813,
+      "PR_AUC": 0.74,
+      "Brier": 0.1779
+    },
+    "plafond_du_regime_thermique_seul": {
+      "ROC_AUC": 0.746,
+      "ROC_AUC_ecart_type": 0.032,
+      "PR_AUC": 0.611,
+      "Brier": 0.1999
+    },
+    "gain_des_signes_avant_coureurs": {
+      "ROC_AUC": 0.067,
+      "PR_AUC": 0.129
+    },
+    "lecture": "Le plafond ci-dessus est celui d'un prédicteur qui connaîtrait la loi de simulation d'origine, où l'instant des pannes est tiré au hasard et où seul leur taux dépend du régime thermique. Depuis l'ajout de signes avant-coureurs (enrichir_usine_B.py), le modèle dépasse ce plafond : l'écart mesure ce qu'apporte la dérive du delta avant la panne."
+  }
+}

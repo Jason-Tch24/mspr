@@ -31,14 +31,31 @@ chacune avec un problème dominant.
 | Usine | Problème simulé | Règles de simulation |
 |---|---|---|
 | A — Lyon | Usure progressive de l'outil | L'usure augmente à chaque session d'un incrément aléatoire dépendant du type de pièce ; l'outil est remplacé à la limite ; le rebut augmente avec l'usure. |
-| B — Bordeaux | Pannes thermiques groupées | Delta thermique = 11,5 K − 2,5 × sinus (période 45 jours) + bruit (σ = 0,5 K). Pannes tirées selon un processus de Poisson dont le taux suit la même sinusoïde et est multiplié par 3 sous 8,6 K. |
+| B — Bordeaux | Pannes thermiques groupées, précédées d'une dérive | Delta thermique = 11,5 K − 2,5 × sinus (période 45 jours) + bruit (σ = 0,5 K). Pannes tirées selon un processus de Poisson dont le taux suit la même sinusoïde et est multiplié par 3 sous 8,6 K. Signes avant-coureurs ajoutés ensuite (voir ci-dessous). |
 | C — Toulouse | Instabilité du process | Non utilisée par les modèles du bloc 4. |
+
+### Enrichissement de l'usine B : signes avant-coureurs (`mspr841/ml/enrichir_usine_B.py`)
+
+Le fichier d'origine est conservé (`data/gold/usine_B_base.parquet`). Le script en repart
+toujours, avec une graine fixée : le relancer redonne le même résultat. Le bilan est tracé
+dans `data/gold/enrichissement_usine_B.json`.
+
+| Hypothèse | Règle | Volume |
+|---|---|---|
+| H1 — dégradation avant la panne | 80 % des pannes thermiques sont précédées d'une baisse progressive du delta de 1,2 à 2,5 K, sur les 12 à 36 h qui précèdent | 93 pannes sur 111 |
+| H1 bis — casse brutale | Les 20 % restants surviennent sans signe | 18 pannes |
+| H2 — retour à la normale | Après la panne, l'intervention rétablit le delta en 3 h | — |
+| H3 — fausses dérives | Une dérive sans panne pour quatre pannes : le delta baisse puis revient seul | 28 dérives |
+| H4 — cohérence | Température process, taux de rebut, stabilité, qualité, TRS et limites de contrôle recalculés avec les formules du notebook Gold | 57 % des sessions touchées |
+
+Les pannes (dates, nombre, durées) ne sont pas modifiées : seules les mesures qui les
+précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 
 ### Limites connues des données
 
 - **Volume** : 6 mois, 4 machines par usine, 111 pannes thermiques (usine B) et 115 remplacements d'outil (usine A).
 - **Simplifications** : une seule cause dominante par usine ; pas d'effet de l'opérateur, de la matière ou de la saison.
-- **Biais** : l'usure est quasi linéaire et les pannes thermiques sont, par construction, en partie aléatoires. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
+- **Biais** : l'usure est quasi linéaire ; les pannes thermiques sont en partie aléatoires et leurs signes avant-coureurs sont une hypothèse de simulation. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
 - **Session** : les données sont à la maille de 30 minutes ; aucun signal haute fréquence (vibrations).
 
 ## 2. Dictionnaire de données (couche Gold)
@@ -121,15 +138,56 @@ linéaires redeviendront pertinents.
 | Modèle | ROC-AUC | PR-AUC | Brier |
 |---|---|---|---|
 | Fréquence de base (référence naïve) | 0,500 | 0,409 | 0,244 |
-| Régression logistique sur le delta instantané | 0,725 | 0,597 | 0,212 |
-| **Régression logistique (5 variables)** ✅ | **0,738** | **0,609** | **0,211** |
-| Random Forest | 0,657 | 0,547 | 0,254 |
-| Gradient Boosting | 0,679 | 0,577 | 0,245 |
+| Régression logistique sur le delta instantané | 0,786 | 0,701 | 0,192 |
+| **Régression logistique (5 variables)** ✅ | **0,813** | **0,740** | **0,178** |
+| Random Forest | 0,770 | 0,708 | 0,198 |
+| Gradient Boosting | 0,785 | 0,713 | 0,195 |
 
 **Interprétation.** La régression logistique est à la fois la meilleure et la plus stable
 d'un pli à l'autre ; les ensembles d'arbres sur-apprennent sur ce petit volume. Le modèle
 se comporte comme attendu physiquement : la probabilité de panne augmente quand le delta
-thermique baisse (0,05 à 15,5 K ; 0,33 au nominal de 11,5 K ; 0,80 à 7,6 K, en régime établi).
+thermique baisse (0,03 à 15,5 K ; 0,29 au nominal de 11,5 K ; 0,82 à 7,6 K, en régime établi).
+Il réagit aussi à la tendance : à 9,5 K, la probabilité est de 0,58 en régime stable et de
+0,86 si ce niveau vient d'être atteint après une dérive de 2 K en 12 h.
+
+### Peut-on faire mieux ? Le plafond théorique, puis l'enrichissement des données
+
+Les données étant simulées, la loi qui génère les pannes est connue. On peut donc calculer
+la performance du meilleur prédicteur possible, celui qui connaîtrait cette loi
+(`mspr841/ml/plafond_theorique.py`, résultat dans `reports/plafond_841.json`).
+
+**Étape 1 — constat sur la simulation d'origine.** Le premier modèle obtenait une ROC-AUC
+de 0,738 ; le prédicteur parfait plafonnait à 0,746. Le modèle captait donc déjà 97 % du
+signal prévisible, et aucun changement d'algorithme ne pouvait l'améliorer : l'instant d'une
+panne était tiré au hasard, seul son *taux* dépendait du régime thermique. Variantes testées
+sans gain : moyennes sur 48 h à 7 jours, pente du delta, splines, gradient boosting par
+histogrammes.
+
+**Étape 2 — enrichissement des données.** Pour progresser, il fallait changer les données
+et non le modèle. Sur une machine réelle, une panne thermique est le plus souvent précédée
+d'une dégradation progressive. Le script `mspr841/ml/enrichir_usine_B.py` ajoute cette
+hypothèse (détail au §1) sans toucher aux pannes elles-mêmes.
+
+| Usine B | Simulation d'origine | Après enrichissement | Plafond du régime seul |
+|---|---|---|---|
+| ROC-AUC | 0,738 | **0,813** | 0,746 |
+| PR-AUC | 0,609 | **0,740** | 0,611 |
+| Brier (plus bas = mieux) | 0,211 | **0,178** | 0,200 |
+| Précision de l'alerte | 63 % | **70 %** | — |
+| Rappel de l'alerte | 57 % | **62 %** | — |
+
+Le modèle dépasse maintenant le plafond du régime seul : l'écart (+0,07 de ROC-AUC) mesure
+ce qu'apporte la dérive du delta avant la panne. L'algorithme et les cinq variables sont
+inchangés ; c'est la variable de tendance qui porte le gain.
+
+**Usine A.** L'erreur moyenne du modèle (1,05 session) est au plancher : le prédicteur
+parfait, estimé sur 20 000 vies d'outil simulées, fait 1,10. Le nombre de sessions restantes
+dépend des pièces qui seront usinées, tirées au hasard. Le modèle A n'a donc pas été modifié.
+
+**Limite à dire au jury.** Le gain du modèle B vient d'une hypothèse de simulation, pas
+d'une mesure sur des machines. Si les pannes réelles de MECHA ne sont pas précédées d'une
+dérive, le modèle retombera au niveau du régime seul. C'est la première chose à vérifier
+lors d'un pilote sur site.
 
 ### Des probabilités aux niveaux d'alerte
 
@@ -138,16 +196,16 @@ modèle. Lecture sur les prédictions de validation :
 
 | Niveau | Seuil | Part des sessions | Taux de panne réellement observé dans les 24 h |
 |---|---|---|---|
-| Normal | p < 0,45 | 63 % | 28 % |
-| À risque | 0,45 ≤ p < 0,65 | 17 % | 58 % |
-| Critique | p ≥ 0,65 | 20 % | 69 % |
+| Normal | p < 0,45 | 64 % | 24 % |
+| À risque | 0,45 ≤ p < 0,65 | 15 % | 54 % |
+| Critique | p ≥ 0,65 | 21 % | 82 % |
 
-À partir du niveau « À risque », l'alerte détecte 57 % des périodes suivies d'une panne
-(rappel) et se vérifie 63 % du temps (précision).
+À partir du niveau « À risque », l'alerte détecte 62 % des périodes suivies d'une panne
+(rappel) et se vérifie 70 % du temps (précision).
 
-**Limite.** Le modèle estime un **niveau de risque**, pas l'instant d'une panne : dans les
-données simulées, les pannes sont tirées au hasard et seul leur taux dépend du régime
-thermique. Même au niveau « Normal », 28 % des périodes de 24 h contiennent une panne. Le
+**Limite.** Le modèle estime un **niveau de risque**, pas l'instant d'une panne : une panne
+sur cinq survient sans signe avant-coureur, et les autres ne sont annoncées que par une
+dérive progressive. Même au niveau « Normal », 24 % des périodes de 24 h contiennent une panne. Le
 modèle sert donc à **prioriser** les contrôles, pas à remplacer la maintenance préventive.
 Un recalibrage sur données terrain est indispensable.
 
@@ -167,7 +225,9 @@ l'historique est maintenant transmis par le dashboard, et les features sont part
 
 ```bash
 pip install -r mspr841/ml/requirements.txt
+python mspr841/ml/enrichir_usine_B.py     # signes avant-coureurs (usine B)
 python mspr841/ml/train_models.py
+python mspr841/ml/plafond_theorique.py
 ```
 
 Sorties : `mspr841/api/models/*.joblib`, `*_meta.json` (paramètres, métriques, benchmark

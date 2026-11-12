@@ -48,7 +48,9 @@ cd dashboard && python app_usine_B.py
 
 ```bash
 pytest                                  # 61 tests : API, features, règles, dashboard
+python mspr841/ml/enrichir_usine_B.py   # ajoute les signes avant-coureurs aux données de l'usine B
 python mspr841/ml/train_models.py       # ré-entraîne et compare les modèles
+python mspr841/ml/plafond_theorique.py  # meilleur score atteignable sur ces données
 flake8 dashboard/ mspr841/ --select=E9,F --extend-ignore=F401,F841
 ```
 
@@ -66,6 +68,8 @@ mspr841/
     regles_metier.json   Seuils d'alerte et messages (paramétrage sans code)
     models/              Modèles entraînés + métadonnées et métriques
   ml/train_models.py  Entraînement, comparaison et sélection des modèles
+  ml/enrichir_usine_B.py   Signes avant-coureurs des pannes thermiques (données usine B)
+  ml/plafond_theorique.py  Plafond de performance calculé depuis la loi de simulation
   tests/              Tests de l'API et des features
   docs/               Dossier du bloc 4 (voir ci-dessous)
 reports/              Benchmark des modèles (benchmark_841.json)
@@ -85,6 +89,7 @@ docker-compose.yml    Stack complète : API + 4 dashboards
 | [07 — Conformité et guide utilisateur](mspr841/docs/07_conformite_et_guide_utilisateur.md) | Cahier des charges ↔ réalisation, guide métier |
 | [08 — Conduite du changement](mspr841/docs/08_conduite_du_changement.md) | Acteurs, plan d'action, formation, déploiement progressif |
 | [09 — Usage de l'IA générative](mspr841/docs/09_usage_ia_generative.md) | Prompts utilisés et vérifications effectuées |
+| [10 — Prompts de reproduction](mspr841/docs/10_prompts_de_reproduction.md) | Un prompt par livrable, rédigé après coup |
 
 ## Limite à garder en tête
 

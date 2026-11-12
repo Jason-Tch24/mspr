@@ -68,15 +68,15 @@ curl -X POST http://localhost:8000/predict/risque-thermique \
 ```json
 {
   "usine": "Usine_B",
-  "probabilite_panne_24h": 0.802,
+  "probabilite_panne_24h": 0.807,
   "risque_label": 2,
   "risque_nom": "Critique",
-  "probabilites": {"Normal": 0.198, "À risque": 0.802},
+  "probabilites": {"Normal": 0.193, "À risque": 0.807},
   "niveau_alerte": "CRITICAL",
-  "interpretation": "Risque thermique CRITIQUE : probabilité de panne sous 24 h : 80%. Contrôler le refroidissement sans attendre.",
+  "interpretation": "Risque thermique CRITIQUE : probabilité de panne sous 24 h : 81%. Contrôler le refroidissement sans attendre.",
   "mode_degrade": false,
   "nb_sessions_historique": 3,
-  "modele": "Régression logistique · AUC=0.813 · PR-AUC=0.74"
+  "modele": "Régression logistique · AUC=0.803 · PR-AUC=0.765"
 }
 ```
 
@@ -216,7 +216,7 @@ tableau de bord de l'usine dans le même onglet. Tous les libellés sont en fran
 - Niveau de risque (Normal / À risque / Critique) et probabilité de panne sous 24 h.
 - Nombre de sessions d'historique analysées.
 - Phrase d'action et mesures courantes.
-- Démonstration : « Dissipation dégradée (delta 9,2 K) », « Panne imminente » (7,6 K), « Reprendre le simulateur ».
+- Démonstration : « Dérive progressive » (le delta passe de 11,5 à 9,5 K en 12 h), « Dissipation dégradée (delta 9,2 K) », « Panne imminente » (7,6 K), « Reprendre le simulateur ».
 
 ### Dashboard Groupe (port 8050)
 

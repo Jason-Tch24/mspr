@@ -7,6 +7,7 @@
 | Source | `data/source/ai4i2020.csv` | 10 000 lignes, 14 colonnes | Jeu public AI4I 2020 Predictive Maintenance (UCI) |
 | Bronze | `data/bronze/ai4i_raw.csv`, `ai4i_raw_dirty.csv` | Copie brute + version dégradée volontairement | Script `notebooks/00_bronze.ipynb` |
 | Silver | `data/silver/ai4i_clean.parquet` | Données nettoyées et contrôlées | `notebooks/01_silver.ipynb` |
+| Gold étendu | `data/gold/usine_B_historique.parquet` | 50 209 sessions du 01/01/2024 au 12/11/2026, pour l'entraînement du modèle de l'usine B | `mspr841/ml/etendre_historique_B.py` |
 | Gold | `data/gold/usine_A.parquet`, `usine_B.parquet`, `usine_C.parquet` | 8 640 sessions de 30 min par usine (du 01/01/2024 au 29/06/2024) | `notebooks/02` à `04` |
 
 Aucune donnée réelle de MECHA n'est utilisée, conformément au cahier des charges.
@@ -51,9 +52,29 @@ dans `data/gold/enrichissement_usine_B.json`.
 Les pannes (dates, nombre, durées) ne sont pas modifiées : seules les mesures qui les
 précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 
+### Extension de l'historique de l'usine B (`mspr841/ml/etendre_historique_B.py`)
+
+Six mois d'historique, c'est 111 pannes thermiques et quatre cycles thermiques : trop peu
+pour départager des modèles. Le script prolonge la simulation de l'usine B du 29/06/2024 au
+12/11/2026, avec exactement les mêmes règles (loi d'origine, puis signes avant-coureurs H1
+à H3). Le bilan est tracé dans `data/gold/extension_usine_B.json`.
+
+| | Six mois du Gold | Extension simulée | Total |
+|---|---|---|---|
+| Sessions de 30 min | 8 640 | 41 569 | 50 209 |
+| Pannes thermiques | 111 | 542 | 653 |
+| Taux de panne par session | 1,28 % | 1,30 % | 1,30 % |
+| Delta thermique moyen | 11,01 K | 10,98 K | 10,99 K |
+
+Les six premiers mois ne sont pas modifiés : ce sont ceux que les tableaux de bord
+rejouent. Le fichier étendu (`data/gold/usine_B_historique.parquet`) ne sert qu'à
+l'entraînement. La date de fin est fixée dans le script, pour que le résultat soit
+reproductible. L'usine A n'a pas été étendue : son modèle est déjà au plancher d'erreur
+(§5), des données supplémentaires n'y changeraient rien.
+
 ### Limites connues des données
 
-- Volume : 6 mois, 4 machines par usine, 111 pannes thermiques (usine B) et 115 remplacements d'outil (usine A).
+- Volume : 6 mois et 115 remplacements d'outil pour l'usine A ; 34 mois et 653 pannes thermiques pour l'usine B après extension, dont 28 mois entièrement simulés par nos soins.
 - Simplifications : une seule cause dominante par usine ; pas d'effet de l'opérateur, de la matière ou de la saison.
 - Biais : l'usure est quasi linéaire ; les pannes thermiques sont en partie aléatoires et leurs signes avant-coureurs sont une hypothèse de simulation. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
 - Session : les données sont à la maille de 30 minutes ; aucun signal haute fréquence (vibrations).
@@ -117,11 +138,20 @@ La même démarche est appliquée aux deux cas (`mspr841/ml/train_models.py`).
 | Ridge (11 variables) | 1,05 | 1,35 | 0,996 |
 | Random Forest | 1,09 | 1,41 | 0,996 |
 | Gradient Boosting | 1,08 | 1,38 | 0,996 |
+| Extra Trees | 1,08 | 1,39 | 0,996 |
+| Gradient Boosting par histogrammes | 1,08 | 1,38 | 0,996 |
+| k plus proches voisins | 3,01 | 3,96 | 0,965 |
+| Réseau de neurones (MLP) | 1,23 | 1,58 | 0,994 |
 
 Interprétation. L'erreur moyenne est d'environ une session, soit 30 minutes. Les modèles
 complexes n'apportent rien : la durée de vie se déduit presque entièrement de l'usure
 cumulée. Le modèle retenu est donc le plus simple, et le plus facile à expliquer à un
 technicien (« chaque point d'usure consomme une durée connue »).
+
+Ce qui n'a pas marché. Les k plus proches voisins font trois fois plus d'erreur : sur onze
+variables mises à la même échelle, dix ne portent aucune information sur la durée restante
+et brouillent la notion de voisinage. Le réseau de neurones est moins bon et moins stable
+que la droite : il doit apprendre une relation linéaire qu'on peut écrire directement.
 
 Limite. Ce R² très élevé vient de la simulation, où l'usure progresse presque
 linéairement. Sur des machines réelles (usure non linéaire, casse brutale, changement de
@@ -132,23 +162,45 @@ linéaires redeviendront pertinents.
 
 - Cible : « à risque » = au moins une panne thermique dans les 48 sessions suivantes (24 h). La session courante est exclue : on prédit, on ne constate pas.
 - Variables : 5 indicateurs du régime thermique : delta courant, moyenne 6 h, moyenne 24 h, minimum 6 h, tendance (moyenne 6 h − moyenne 24 h).
-- Volume : 8 592 sessions, dont 41 % « à risque ».
+- Volume : 50 161 sessions sur 34 mois (historique étendu, §1), dont 44,5 % « à risque ».
 - Validation : 5 plis temporels séparés par un intervalle de 48 sessions, pour qu'aucune session d'entraînement ne recouvre le futur du pli de test.
 
 | Modèle | ROC-AUC | PR-AUC | Brier |
 |---|---|---|---|
-| Fréquence de base (référence naïve) | 0,500 | 0,409 | 0,244 |
-| Régression logistique sur le delta instantané | 0,786 | 0,701 | 0,192 |
-| Régression logistique à 5 variables (retenu) | 0,813 | 0,740 | 0,178 |
-| Random Forest | 0,770 | 0,708 | 0,198 |
-| Gradient Boosting | 0,785 | 0,713 | 0,195 |
+| Fréquence de base (référence naïve) | 0,500 | 0,445 | 0,247 |
+| Régression logistique sur le delta instantané | 0,791 | 0,758 | 0,185 |
+| Régression logistique à 5 variables (retenu) | 0,803 | 0,765 | 0,179 |
+| Random Forest | 0,782 | 0,756 | 0,190 |
+| Gradient Boosting | 0,797 | 0,771 | 0,182 |
+| Extra Trees | 0,802 | 0,776 | 0,180 |
+| Gradient Boosting par histogrammes | 0,799 | 0,775 | 0,181 |
+| k plus proches voisins | 0,792 | 0,763 | 0,184 |
+| Réseau de neurones (MLP) | 0,806 | 0,778 | 0,178 |
 
-Interprétation. La régression logistique est à la fois la meilleure et la plus stable
-d'un pli à l'autre ; les ensembles d'arbres sur-apprennent sur ce petit volume. Le modèle
-se comporte comme attendu physiquement : la probabilité de panne augmente quand le delta
-thermique baisse (0,03 à 15,5 K ; 0,29 au nominal de 11,5 K ; 0,82 à 7,6 K, en régime établi).
-Il réagit aussi à la tendance : à 9,5 K, la probabilité est de 0,58 en régime stable et de
-0,86 si ce niveau vient d'être atteint après une dérive de 2 K en 12 h.
+Interprétation. Les neuf modèles se tiennent dans un mouchoir : de 0,78 à 0,81 de ROC-AUC.
+Le réseau de neurones arrive en tête de 0,003, soit moins que l'écart observé d'un pli à
+l'autre (0,004 à 0,014 selon les modèles). La règle de parcimonie retient donc la régression
+logistique à cinq variables : même performance à 1 % près, cinq coefficients lisibles, et
+aucun réglage à entretenir. Le modèle se comporte comme attendu physiquement : la
+probabilité de panne augmente quand le delta thermique baisse (0,04 à 15,5 K ; 0,31 au
+nominal de 11,5 K ; 0,82 à 7,6 K, en régime établi). Il réagit aussi à la tendance : à
+9,5 K, la probabilité est de 0,60 en régime stable et de 0,81 si ce niveau vient d'être
+atteint après une dérive de 2 K en 12 h.
+
+Ce qui n'a pas marché.
+
+- Le Random Forest reste le moins bon des modèles complets (0,782), même avec six fois
+  plus de données. Les cinq variables sont très corrélées entre elles (ce sont cinq
+  lectures du même signal) : les arbres les découpent en paliers là où la relation est
+  régulière.
+- Le delta instantané seul plafonne à 0,791 : il ignore la tendance, qui est précisément
+  ce que les signes avant-coureurs apportent.
+- Les modèles plus souples (boosting, Extra Trees, réseau de neurones) n'ajoutent rien de
+  mesurable à la régression logistique. Le signal disponible est simple : un niveau et une
+  tendance. Il n'y a pas d'interaction cachée à découvrir.
+- Sur six mois seulement, les mêmes ensembles d'arbres étaient nettement derrière (0,77 à
+  0,79 contre 0,81) et variaient de 0,03 à 0,05 d'un pli à l'autre. L'extension de
+  l'historique a ramené cette dispersion sous 0,01 : le classement est maintenant fiable.
 
 ### Plafond théorique et enrichissement des données
 
@@ -168,17 +220,27 @@ et non le modèle. Sur une machine réelle, une panne thermique est le plus souv
 d'une dégradation progressive. Le script `mspr841/ml/enrichir_usine_B.py` ajoute cette
 hypothèse (détail au §1) sans toucher aux pannes elles-mêmes.
 
-| Usine B | Simulation d'origine | Après enrichissement | Plafond du régime seul |
-|---|---|---|---|
-| ROC-AUC | 0,738 | 0,813 | 0,746 |
-| PR-AUC | 0,609 | 0,740 | 0,611 |
-| Brier (plus bas = mieux) | 0,211 | 0,178 | 0,200 |
-| Précision de l'alerte | 63 % | 70 % | - |
-| Rappel de l'alerte | 57 % | 62 % | - |
+Étape 3 : extension de l'historique. De 6 à 34 mois, pour comparer neuf modèles sur un
+volume suffisant (détail au §1).
 
-Le modèle dépasse maintenant le plafond du régime seul : l'écart (+0,07 de ROC-AUC) mesure
-ce qu'apporte la dérive du delta avant la panne. L'algorithme et les cinq variables sont
-inchangés ; c'est la variable de tendance qui porte le gain.
+| Usine B | 1. Simulation d'origine, 6 mois | 2. Avec signes avant-coureurs, 6 mois | 3. Avec signes avant-coureurs, 34 mois |
+|---|---|---|---|
+| ROC-AUC | 0,738 | 0,813 | 0,803 |
+| Écart-type entre plis | 0,036 | 0,030 | 0,007 |
+| PR-AUC | 0,609 | 0,740 | 0,765 |
+| Brier (plus bas = mieux) | 0,211 | 0,178 | 0,179 |
+| Précision de l'alerte | 63 % | 70 % | 70 % |
+| Rappel de l'alerte | 57 % | 62 % | 70 % |
+| Plafond du régime seul (ROC-AUC) | 0,746 | 0,746 | 0,758 |
+
+Le modèle dépasse le plafond du régime seul : l'écart (+0,05 de ROC-AUC sur 34 mois)
+mesure ce qu'apporte la dérive du delta avant la panne. L'algorithme et les cinq variables
+sont inchangés ; c'est la variable de tendance qui porte le gain.
+
+Entre les étapes 2 et 3, la ROC-AUC passe de 0,813 à 0,803. Ce n'est pas une dégradation
+du modèle : la mesure sur six mois reposait sur 111 pannes et variait de 0,03 d'un pli à
+l'autre. Celle sur 34 mois repose sur 653 pannes et ne varie plus que de 0,007. C'est le
+chiffre de l'étape 3 qu'il faut retenir. Le rappel de l'alerte, lui, progresse de 62 à 70 %.
 
 Usine A. L'erreur moyenne du modèle (1,05 session) est au plancher : le prédicteur
 parfait, estimé sur 20 000 vies d'outil simulées, fait 1,10. Le nombre de sessions restantes
@@ -196,11 +258,11 @@ modèle. Lecture sur les prédictions de validation :
 
 | Niveau | Seuil | Part des sessions | Taux de panne réellement observé dans les 24 h |
 |---|---|---|---|
-| Normal | p < 0,45 | 64 % | 24 % |
-| À risque | 0,45 ≤ p < 0,65 | 15 % | 54 % |
-| Critique | p ≥ 0,65 | 21 % | 82 % |
+| Normal | p < 0,45 | 55 % | 24 % |
+| À risque | 0,45 ≤ p < 0,65 | 19 % | 53 % |
+| Critique | p ≥ 0,65 | 26 % | 81 % |
 
-À partir du niveau « À risque », l'alerte détecte 62 % des périodes suivies d'une panne
+À partir du niveau « À risque », l'alerte détecte 70 % des périodes suivies d'une panne
 (rappel) et se vérifie 70 % du temps (précision).
 
 Limite. Le modèle estime un niveau de risque, pas l'instant d'une panne : une panne
@@ -226,6 +288,7 @@ l'historique est maintenant transmis par le dashboard, et les features sont part
 ```bash
 pip install -r mspr841/ml/requirements.txt
 python mspr841/ml/enrichir_usine_B.py     # signes avant-coureurs (usine B)
+python mspr841/ml/etendre_historique_B.py # historique étendu jusqu'au 12/11/2026
 python mspr841/ml/train_models.py
 python mspr841/ml/plafond_theorique.py
 ```

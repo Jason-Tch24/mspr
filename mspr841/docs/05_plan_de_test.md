@@ -119,6 +119,7 @@ Environnement : macOS, Python 3.13, puis rejoué sous Linux / Python 3.11 par la
 | R02 | Outil en fin de vie | Cliquer « Usure critique (92 %) » | Badge CRITICAL, message « Remplacement outil IMMINENT » | Validé le 10/11/2026 |
 | R03 | Retour à la normale | Cliquer « Reprendre le simulateur » | Le badge revient au niveau du simulateur | Validé le 10/11/2026 |
 | R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet Prédictions IA | Niveau, probabilité sous 24 h, nombre de sessions analysées | Validé le 10/11/2026 |
+| R05b | Dérive progressive | Cliquer « Dérive progressive » | Niveau « Critique », probabilité proche de 81 % : à 9,5 K, une baisse récente est plus risquée qu'un régime stable (60 %) | À jouer avant la soutenance |
 | R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | Validé le 10/11/2026 |
 | R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,0 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | Validé le 10/11/2026 |
 | R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | Validé le 10/11/2026 |
@@ -151,8 +152,8 @@ l'ensemble avant la soutenance, sur la machine de démonstration.
 | Critère | Seuil | Résultat | Verdict |
 |---|---|---|---|
 | Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,05 session | Fait |
-| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,81 | Fait |
-| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 54 % / 82 % | Fait |
+| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,80 | Fait |
+| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 53 % / 81 % | Fait |
 | Tests automatisés | 100 % réussis | 61 / 61 | Fait |
 | Démarrage en conteneur | API saine, dashboards servis | Vérifié | Fait |
 | Résistance à l'indisponibilité de l'IA | Dashboard utilisable | Vérifié par le code et R07 | Fait |

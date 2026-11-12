@@ -70,6 +70,27 @@ delta thermique avant 80 % des pannes. La ROC-AUC du modèle B passe de 0,738 à
 sont décrites au document 03 §1, et la limite (gain issu d'une hypothèse de simulation)
 au §5.
 
+#### Prompt 7 : davantage de données et de modèles
+
+> entraîne un peu plus de modèles et enrichis les données de départ : simule de nouvelles
+> données pour compléter. Entraîne quatre autres modèles dessus, garde le plus performant,
+> comme ça on a un benchmark, et explique ce qui n'a pas marché.
+
+Résultat : historique de l'usine B étendu de 6 à 34 mois par simulation
+(`mspr841/ml/etendre_historique_B.py`) ; quatre modèles ajoutés par usine (Extra Trees,
+gradient boosting par histogrammes, k plus proches voisins, réseau de neurones). Le réseau
+de neurones arrive en tête de 0,003 de ROC-AUC, soit moins que l'écart entre plis : la
+régression logistique est conservée (document 03 §5, avec l'analyse de ce qui n'a pas marché).
+
+#### Prompt 8 : simulation dans l'application
+
+> simuler des données jusqu'à la date du jour ; quand l'application tourne, les données
+> continuent à être simulées ; et pouvoir cliquer pour simuler un dysfonctionnement
+
+Résultat : l'historique d'entraînement va jusqu'au 12/11/2026 ; l'horloge du simulateur
+part de la date du lancement et avance de 30 minutes toutes les 10 secondes ; un bouton
+« Dérive progressive » s'ajoute aux scénarios de panne de l'usine B.
+
 Le document 10 propose, pour chaque livrable, un prompt de reproduction rédigé après coup.
 Il ne remplace pas la liste ci-dessus, qui seule retrace les demandes réellement faites.
 
@@ -90,6 +111,7 @@ Rien n'a été intégré sur la seule foi du texte généré. Les vérifications
 | Conteneurisation | Construction et démarrage réels des images | Un défaut de droits détecté et corrigé ; stack fonctionnelle |
 | Demande d'amélioration des modèles | Calcul du meilleur score atteignable à partir de la loi de simulation | Modèles déjà au plafond de la simulation d'origine |
 | Enrichissement des données de l'usine B | Durée de dérive choisie sur un critère physique (12 à 36 h), trois durées comparées ; pannes inchangées, vérifié ; 61 tests rejoués | ROC-AUC 0,81 ; un test adapté (B05) car une baisse du delta est désormais un signe de risque |
+| Extension de l'historique et quatre modèles de plus | Taux de panne et delta moyen comparés entre les six mois d'origine et l'extension ; classement relu avec l'écart-type entre plis | Extension cohérente (1,28 % et 1,30 % de pannes) ; aucun modèle ne se détache |
 | Chiffres cités dans la documentation | Relus dans les fichiers produits (`benchmark_841.json`, rapports Silver, limites SPC) | Deux affirmations corrigées après vérification |
 
 ## 4. Ce qui a été adapté ou écarté

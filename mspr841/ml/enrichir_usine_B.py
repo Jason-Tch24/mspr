@@ -84,16 +84,13 @@ def _limites(serie: pd.Series, nom: str, n_sigma: int = 3) -> dict:
     }
 
 
-def main() -> None:
-    if not BASE.exists():
-        shutil.copyfile(FICHIER, BASE)
-    df = pd.read_parquet(BASE).sort_values("timestamp").reset_index(drop=True)
-    rng = np.random.default_rng(SEED)
-    n = len(df)
-    ancien = df["temp_process_delta"].to_numpy(dtype=float)
-    pannes = np.flatnonzero(df["panne_thermique"].to_numpy() == 1)
-
-    # ── H1, H2 : dérive avant les pannes annoncées ───────────
+def calculer_baisse(n: int, pannes: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Baisse du delta (en K) à appliquer à chaque session, selon H1 à H3.
+    Renvoie (baisse, pannes annoncées, positions des dérives sans panne).
+    Utilisée ici et par etendre_historique_B.py : mêmes règles partout.
+    """
+    # H1, H2 : dérive avant les pannes annoncées
     baisse = np.zeros(n)
     annoncees = pannes[rng.random(len(pannes)) < PART_PANNES_ANNONCEES]
     for i in annoncees:
@@ -104,7 +101,7 @@ def main() -> None:
             retour=DUREE_RETOUR,
         )
 
-    # ── H3 : dérives sans panne, loin de toute panne thermique ─
+    # H3 : dérives sans panne, loin de toute panne thermique
     nb_fausses = int(round(len(pannes) * RATIO_FAUSSES_DERIVES))
     loin = np.ones(n, dtype=bool)
     for i in pannes:
@@ -118,6 +115,18 @@ def main() -> None:
             amplitude=float(rng.uniform(*AMPLITUDE_DERIVE)) * 0.8,
             retour=duree // 2,
         )
+    return baisse, annoncees, fausses
+
+
+def main() -> None:
+    if not BASE.exists():
+        shutil.copyfile(FICHIER, BASE)
+    df = pd.read_parquet(BASE).sort_values("timestamp").reset_index(drop=True)
+    rng = np.random.default_rng(SEED)
+    n = len(df)
+    ancien = df["temp_process_delta"].to_numpy(dtype=float)
+    pannes = np.flatnonzero(df["panne_thermique"].to_numpy() == 1)
+    baisse, annoncees, fausses = calculer_baisse(n, pannes, rng)
 
     nouveau = np.round(np.maximum(ancien - baisse, DELTA_MIN), 2)
     df["temp_process_delta"] = nouveau

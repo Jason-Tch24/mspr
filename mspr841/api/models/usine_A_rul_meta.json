@@ -68,9 +68,33 @@
       "MAE_ecart_type": 0.065,
       "RMSE": 1.382,
       "R2": 0.9957
+    },
+    "ExtraTreesRegressor": {
+      "MAE": 1.078,
+      "MAE_ecart_type": 0.065,
+      "RMSE": 1.388,
+      "R2": 0.9957
+    },
+    "HistGradientBoostingRegressor": {
+      "MAE": 1.076,
+      "MAE_ecart_type": 0.071,
+      "RMSE": 1.382,
+      "R2": 0.9957
+    },
+    "k plus proches voisins": {
+      "MAE": 3.012,
+      "MAE_ecart_type": 0.31,
+      "RMSE": 3.964,
+      "R2": 0.9646
+    },
+    "Réseau de neurones (MLP)": {
+      "MAE": 1.229,
+      "MAE_ecart_type": 0.106,
+      "RMSE": 1.576,
+      "R2": 0.9944
     }
   },
   "limite_connue": "Dans les données simulées, l'usure cumulée progresse quasi linéairement : la RUL se déduit presque directement de l'usure, d'où un R² très élevé même pour un modèle linéaire. Ce score ne préjuge pas de la performance sur des machines réelles (usure non linéaire, casse brutale).",
-  "date_entrainement": "2026-11-12T10:00:27",
+  "date_entrainement": "2026-11-12T10:59:53",
   "scikit_learn": "1.8.0"
 }

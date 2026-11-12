@@ -36,11 +36,19 @@ Trois consignes sont communes à tous :
 > Ne modifie pas les pannes elles-mêmes. Choisis les durées sur un critère physique, pas
 > pour maximiser le score. Documente chaque hypothèse et trace le bilan dans un fichier.
 
+#### Extension de l'historique
+
+> Six mois d'historique ne suffisent pas pour départager des modèles. Prolonge la
+> simulation de l'usine B jusqu'à une date fixe, avec exactement les mêmes règles que les
+> six premiers mois, sans modifier ceux-ci. Vérifie que le taux de panne et le delta moyen
+> de l'extension sont cohérents avec l'origine. Trace le bilan dans un fichier.
+
 #### Modèles de machine learning
 
 > Écris un script d'entraînement pour deux cas : durée de vie restante de l'outil
 > (régression) et risque de panne thermique à 24 h (classification). Compare une référence
-> naïve, des régressions simples, Random Forest et Gradient Boosting en validation
+> naïve, des régressions simples, Random Forest, Gradient Boosting, Extra Trees, gradient
+> boosting par histogrammes, k plus proches voisins et un réseau de neurones en validation
 > temporelle. Retiens le modèle le plus simple à moins de 1 % du meilleur. Exporte les
 > modèles, leurs paramètres et leurs métriques. Interprète les résultats et dis leurs limites.
 

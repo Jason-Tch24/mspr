@@ -11,69 +11,93 @@
     "delta_tendance"
   ],
   "horizon_sessions": 48,
-  "n_sessions_entrainement": 8592,
+  "n_sessions_entrainement": 50161,
   "validation": "TimeSeriesSplit walk-forward, 5 plis, gap de 48 sessions",
   "metriques_cv": {
-    "ROC_AUC": 0.813,
-    "ROC_AUC_ecart_type": 0.03,
-    "PR_AUC": 0.74,
-    "Brier": 0.1779
+    "ROC_AUC": 0.803,
+    "ROC_AUC_ecart_type": 0.007,
+    "PR_AUC": 0.765,
+    "Brier": 0.1792
   },
   "lecture_metier_des_seuils": {
     "seuil_warning": 0.45,
     "seuil_critical": 0.65,
-    "frequence_de_base": 0.409,
+    "frequence_de_base": 0.445,
     "niveaux": {
       "OK": {
-        "part_des_sessions": 0.641,
-        "taux_panne_24h_observe": 0.244
+        "part_des_sessions": 0.554,
+        "taux_panne_24h_observe": 0.243
       },
       "WARNING": {
-        "part_des_sessions": 0.151,
-        "taux_panne_24h_observe": 0.54
+        "part_des_sessions": 0.185,
+        "taux_panne_24h_observe": 0.533
       },
       "CRITICAL": {
-        "part_des_sessions": 0.209,
-        "taux_panne_24h_observe": 0.822
+        "part_des_sessions": 0.261,
+        "taux_panne_24h_observe": 0.81
       }
     },
-    "rappel_alerte": 0.618,
-    "precision_alerte": 0.704
+    "rappel_alerte": 0.697,
+    "precision_alerte": 0.695
   },
   "benchmark": {
     "Fréquence de base (référence naïve)": {
       "ROC_AUC": 0.5,
       "ROC_AUC_ecart_type": 0.0,
-      "PR_AUC": 0.409,
-      "Brier": 0.2439,
+      "PR_AUC": 0.445,
+      "Brier": 0.2474,
       "reference": true
     },
     "Régression logistique sur le delta instantané": {
-      "ROC_AUC": 0.786,
-      "ROC_AUC_ecart_type": 0.031,
-      "PR_AUC": 0.701,
-      "Brier": 0.1915
+      "ROC_AUC": 0.791,
+      "ROC_AUC_ecart_type": 0.014,
+      "PR_AUC": 0.758,
+      "Brier": 0.1849
     },
     "Régression logistique": {
-      "ROC_AUC": 0.813,
-      "ROC_AUC_ecart_type": 0.03,
-      "PR_AUC": 0.74,
-      "Brier": 0.1779
+      "ROC_AUC": 0.803,
+      "ROC_AUC_ecart_type": 0.007,
+      "PR_AUC": 0.765,
+      "Brier": 0.1792
     },
     "RandomForestClassifier": {
-      "ROC_AUC": 0.77,
-      "ROC_AUC_ecart_type": 0.05,
-      "PR_AUC": 0.708,
-      "Brier": 0.198
+      "ROC_AUC": 0.782,
+      "ROC_AUC_ecart_type": 0.009,
+      "PR_AUC": 0.756,
+      "Brier": 0.1903
     },
     "GradientBoostingClassifier": {
-      "ROC_AUC": 0.785,
-      "ROC_AUC_ecart_type": 0.044,
-      "PR_AUC": 0.713,
-      "Brier": 0.1948
+      "ROC_AUC": 0.797,
+      "ROC_AUC_ecart_type": 0.008,
+      "PR_AUC": 0.771,
+      "Brier": 0.1824
+    },
+    "ExtraTreesClassifier": {
+      "ROC_AUC": 0.802,
+      "ROC_AUC_ecart_type": 0.007,
+      "PR_AUC": 0.776,
+      "Brier": 0.1795
+    },
+    "HistGradientBoostingClassifier": {
+      "ROC_AUC": 0.799,
+      "ROC_AUC_ecart_type": 0.005,
+      "PR_AUC": 0.775,
+      "Brier": 0.1807
+    },
+    "k plus proches voisins": {
+      "ROC_AUC": 0.792,
+      "ROC_AUC_ecart_type": 0.006,
+      "PR_AUC": 0.763,
+      "Brier": 0.1842
+    },
+    "Réseau de neurones (MLP)": {
+      "ROC_AUC": 0.806,
+      "ROC_AUC_ecart_type": 0.004,
+      "PR_AUC": 0.778,
+      "Brier": 0.1783
     }
   },
   "limite_connue": "Les pannes simulées suivent un processus aléatoire dont seul le taux dépend du régime thermique : le modèle estime un NIVEAU DE RISQUE, il ne peut pas annoncer l'instant exact d'une panne. Recalibrage indispensable sur données terrain.",
-  "date_entrainement": "2026-11-12T10:00:27",
+  "date_entrainement": "2026-11-12T10:59:53",
   "scikit_learn": "1.8.0"
 }

@@ -35,7 +35,7 @@
 | Livrable attendu | Statut | Emplacement |
 |---|---|---|
 | Code source versionné sur Git | Fait | https://github.com/Jason-Tch24/mspr |
-| Jeux de données, données transformées, hypothèses | Fait | `data/`, `mspr841/ml/enrichir_usine_B.py`, document 03 |
+| Jeux de données, données transformées, hypothèses | Fait | `data/`, `mspr841/ml/enrichir_usine_B.py`, `mspr841/ml/etendre_historique_B.py`, document 03 |
 | Modèles, paramètres, métriques, interprétation | Fait | `mspr841/api/models/`, document 03 (dont le plafond théorique et l'enrichissement, §5) |
 | Configuration de conteneurisation et instructions | Fait | `docker-compose.yml`, README, document 06 |
 | Chaîne d'intégration continue | Fait | `.github/workflows/ci.yml` |

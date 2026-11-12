@@ -49,6 +49,7 @@ cd dashboard && python app_usine_B.py
 ```bash
 pytest                                  # 61 tests : API, features, règles, dashboard
 python mspr841/ml/enrichir_usine_B.py   # ajoute les signes avant-coureurs aux données de l'usine B
+python mspr841/ml/etendre_historique_B.py   # prolonge l'historique de l'usine B jusqu'au 12/11/2026
 python mspr841/ml/train_models.py       # ré-entraîne et compare les modèles
 python mspr841/ml/plafond_theorique.py  # meilleur score atteignable sur ces données
 flake8 dashboard/ mspr841/ --select=E9,F --extend-ignore=F401,F841
@@ -69,6 +70,7 @@ mspr841/
     models/              Modèles entraînés + métadonnées et métriques
   ml/train_models.py  Entraînement, comparaison et sélection des modèles
   ml/enrichir_usine_B.py   Signes avant-coureurs des pannes thermiques (données usine B)
+  ml/etendre_historique_B.py  Historique d'entraînement étendu (usine B, 34 mois)
   ml/plafond_theorique.py  Plafond de performance calculé depuis la loi de simulation
   tests/              Tests de l'API et des features
   docs/               Dossier du bloc 4 (voir ci-dessous)

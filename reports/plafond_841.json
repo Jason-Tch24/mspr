@@ -15,19 +15,19 @@
   "usine_B": {
     "modele_retenu": "Régression logistique",
     "modele": {
-      "ROC_AUC": 0.813,
-      "PR_AUC": 0.74,
-      "Brier": 0.1779
+      "ROC_AUC": 0.803,
+      "PR_AUC": 0.765,
+      "Brier": 0.1792
     },
     "plafond_du_regime_thermique_seul": {
-      "ROC_AUC": 0.746,
-      "ROC_AUC_ecart_type": 0.032,
-      "PR_AUC": 0.611,
-      "Brier": 0.1999
+      "ROC_AUC": 0.758,
+      "ROC_AUC_ecart_type": 0.019,
+      "PR_AUC": 0.679,
+      "Brier": 0.1987
     },
     "gain_des_signes_avant_coureurs": {
-      "ROC_AUC": 0.067,
-      "PR_AUC": 0.129
+      "ROC_AUC": 0.045,
+      "PR_AUC": 0.086
     },
     "lecture": "Le plafond ci-dessus est celui d'un prédicteur qui connaîtrait la loi de simulation d'origine, où l'instant des pannes est tiré au hasard et où seul leur taux dépend du régime thermique. Depuis l'ajout de signes avant-coureurs (enrichir_usine_B.py), le modèle dépasse ce plafond : l'écart mesure ce qu'apporte la dérive du delta avant la panne."
   }

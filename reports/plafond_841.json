@@ -2,8 +2,8 @@
   "usine_A": {
     "modele_retenu": "Linéaire sur l'usure seule",
     "modele": {
-      "MAE": 1.052,
-      "RMSE": 1.348
+      "MAE": 1.128,
+      "RMSE": 1.483
     },
     "plafond_theorique": {
       "MAE": 1.103,

@@ -91,6 +91,17 @@ Résultat : l'historique d'entraînement va jusqu'au 12/11/2026 ; l'horloge du s
 part de la date du lancement et avance de 30 minutes toutes les 10 secondes ; un bouton
 « Dérive progressive » s'ajoute aux scénarios de panne de l'usine B.
 
+#### Prompt 9 : toutes les usines
+
+> fais les données simulées pour toutes les usines, pourquoi seulement sur B, je veux sur
+> toutes les données
+
+Résultat : `mspr841/ml/etendre_historique_AC.py` prolonge aussi les usines A et C jusqu'au
+12/11/2026. Le modèle de l'usine A est ré-entraîné sur 34 mois. Son erreur ne baisse pas
+(1,13 session contre 1,05 sur six mois) : il était déjà au plancher théorique de 1,10. La
+demande a été satisfaite, et le résultat, contraire à l'attente, est rapporté tel quel
+(document 03 §4).
+
 Le document 10 propose, pour chaque livrable, un prompt de reproduction rédigé après coup.
 Il ne remplace pas la liste ci-dessus, qui seule retrace les demandes réellement faites.
 

@@ -100,7 +100,12 @@ def _choisir(resultats: dict, metrique: str, plus_grand_mieux: bool) -> str:
 # ═════════════════════════════════════════════════════════════
 
 def preparer_usine_A() -> tuple[pd.DataFrame, pd.Series]:
-    df = pd.read_parquet(GOLD / "usine_A.parquet").sort_values("timestamp").reset_index(drop=True)
+    # Historique étendu (etendre_historique_AC.py) : les six mois du Gold, prolongés
+    # par simulation avec les mêmes règles. À défaut, les six mois seuls.
+    fichier = GOLD / "usine_A_historique.parquet"
+    if not fichier.exists():
+        fichier = GOLD / "usine_A.parquet"
+    df = pd.read_parquet(fichier).sort_values("timestamp").reset_index(drop=True)
     remplacement = df["remplacement_outil"].to_numpy()
     rul = np.full(len(df), np.nan)
     prochain = None

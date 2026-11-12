@@ -1,0 +1,70 @@
+{
+  "usine_A": {
+    "graine": 2042,
+    "periode": [
+      "2024-01-01 06:00:00",
+      "2026-11-12 06:00:00"
+    ],
+    "gold": {
+      "sessions": 8640,
+      "remplacements_outil": 115,
+      "taux_de_panne": 0.028,
+      "taux_rebut_moyen": 0.0444,
+      "TRS_moyen": 0.9179,
+      "temps_cycle_moyen": 45.36,
+      "usure_moyenne_pct": 44.7
+    },
+    "extension": {
+      "sessions": 41569,
+      "remplacements_outil": 561,
+      "taux_de_panne": 0.0256,
+      "taux_rebut_moyen": 0.044,
+      "TRS_moyen": 0.9208,
+      "temps_cycle_moyen": 45.36,
+      "usure_moyenne_pct": 44.67
+    },
+    "total": {
+      "sessions": 50209,
+      "remplacements_outil": 676,
+      "taux_de_panne": 0.026,
+      "taux_rebut_moyen": 0.044,
+      "TRS_moyen": 0.9203,
+      "temps_cycle_moyen": 45.36,
+      "usure_moyenne_pct": 44.67
+    }
+  },
+  "usine_C": {
+    "graine": 2256,
+    "periode": [
+      "2024-01-01 06:00:00",
+      "2026-11-12 06:00:00"
+    ],
+    "gold": {
+      "sessions": 8640,
+      "remplacements_outil": 147,
+      "taux_de_panne": 0.0249,
+      "taux_rebut_moyen": 0.1116,
+      "TRS_moyen": 0.838,
+      "temps_cycle_moyen": 42.82,
+      "usure_moyenne_pct": 40.61
+    },
+    "extension": {
+      "sessions": 41569,
+      "remplacements_outil": 708,
+      "taux_de_panne": 0.0227,
+      "taux_rebut_moyen": 0.1106,
+      "TRS_moyen": 0.8412,
+      "temps_cycle_moyen": 42.81,
+      "usure_moyenne_pct": 40.65
+    },
+    "total": {
+      "sessions": 50209,
+      "remplacements_outil": 855,
+      "taux_de_panne": 0.023,
+      "taux_rebut_moyen": 0.1108,
+      "TRS_moyen": 0.8406,
+      "temps_cycle_moyen": 42.81,
+      "usure_moyenne_pct": 40.64
+    }
+  }
+}

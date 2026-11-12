@@ -39,7 +39,7 @@ Trois consignes sont communes à tous :
 #### Extension de l'historique
 
 > Six mois d'historique ne suffisent pas pour départager des modèles. Prolonge la
-> simulation de l'usine B jusqu'à une date fixe, avec exactement les mêmes règles que les
+> simulation des trois usines jusqu'à une date fixe, avec exactement les mêmes règles que les
 > six premiers mois, sans modifier ceux-ci. Vérifie que le taux de panne et le delta moyen
 > de l'extension sont cohérents avec l'origine. Trace le bilan dans un fichier.
 

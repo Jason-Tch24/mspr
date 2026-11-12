@@ -53,7 +53,7 @@ curl -X POST http://localhost:8000/predict/rul \
   "usure_cumulee_pct": 88.0,
   "niveau_alerte": "CRITICAL",
   "interpretation": "Remplacement outil IMMINENT : 2 session(s) restante(s) (1.1 h). Planifier l'intervention maintenant.",
-  "modele": "Linéaire sur l'usure seule · MAE=1.052 sessions · R²=0.996"
+  "modele": "Linéaire sur l'usure seule · MAE=1.128 sessions · R²=0.9951"
 }
 ```
 

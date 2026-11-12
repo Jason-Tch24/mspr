@@ -35,7 +35,7 @@
 | Livrable attendu | Statut | Emplacement |
 |---|---|---|
 | Code source versionné sur Git | Fait | https://github.com/Jason-Tch24/mspr |
-| Jeux de données, données transformées, hypothèses | Fait | `data/`, `mspr841/ml/enrichir_usine_B.py`, `mspr841/ml/etendre_historique_B.py`, document 03 |
+| Jeux de données, données transformées, hypothèses | Fait | `data/`, `mspr841/ml/enrichir_usine_B.py`, `mspr841/ml/etendre_historique_B.py`, `etendre_historique_AC.py`, document 03 |
 | Modèles, paramètres, métriques, interprétation | Fait | `mspr841/api/models/`, document 03 (dont le plafond théorique et l'enrichissement, §5) |
 | Configuration de conteneurisation et instructions | Fait | `docker-compose.yml`, README, document 06 |
 | Chaîne d'intégration continue | Fait | `.github/workflows/ci.yml` |
@@ -91,7 +91,7 @@ Usine A `http://<serveur>:8051` · Usine B `http://<serveur>:8052` · Groupe `ht
 | CRITICAL : 10 sessions ou moins (5 h ou moins) | Remplacement imminent | Planifier l'intervention maintenant |
 
 Une session dure 30 minutes. La durée est aussi affichée en heures.
-Marge d'erreur constatée : environ une session, soit 30 minutes.
+Marge d'erreur constatée : un peu plus d'une session, soit environ 35 minutes.
 
 ### Lire l'écran : Usine B (risque thermique)
 

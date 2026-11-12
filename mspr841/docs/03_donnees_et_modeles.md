@@ -7,7 +7,7 @@
 | Source | `data/source/ai4i2020.csv` | 10 000 lignes, 14 colonnes | Jeu public AI4I 2020 Predictive Maintenance (UCI) |
 | Bronze | `data/bronze/ai4i_raw.csv`, `ai4i_raw_dirty.csv` | Copie brute + version dégradée volontairement | Script `notebooks/00_bronze.ipynb` |
 | Silver | `data/silver/ai4i_clean.parquet` | Données nettoyées et contrôlées | `notebooks/01_silver.ipynb` |
-| Gold étendu | `data/gold/usine_B_historique.parquet` | 50 209 sessions du 01/01/2024 au 12/11/2026, pour l'entraînement du modèle de l'usine B | `mspr841/ml/etendre_historique_B.py` |
+| Gold étendu | `data/gold/usine_A_historique.parquet`, `usine_B_historique.parquet`, `usine_C_historique.parquet` | 50 209 sessions par usine, du 01/01/2024 au 12/11/2026, pour l'entraînement | `mspr841/ml/etendre_historique_AC.py`, `etendre_historique_B.py` |
 | Gold | `data/gold/usine_A.parquet`, `usine_B.parquet`, `usine_C.parquet` | 8 640 sessions de 30 min par usine (du 01/01/2024 au 29/06/2024) | `notebooks/02` à `04` |
 
 Aucune donnée réelle de MECHA n'est utilisée, conformément au cahier des charges.
@@ -52,29 +52,44 @@ dans `data/gold/enrichissement_usine_B.json`.
 Les pannes (dates, nombre, durées) ne sont pas modifiées : seules les mesures qui les
 précèdent changent. Le delta moyen passe de 11,49 K à 11,01 K.
 
-### Extension de l'historique de l'usine B (`mspr841/ml/etendre_historique_B.py`)
+### Extension de l'historique des trois usines
 
-Six mois d'historique, c'est 111 pannes thermiques et quatre cycles thermiques : trop peu
-pour départager des modèles. Le script prolonge la simulation de l'usine B du 29/06/2024 au
-12/11/2026, avec exactement les mêmes règles (loi d'origine, puis signes avant-coureurs H1
-à H3). Le bilan est tracé dans `data/gold/extension_usine_B.json`.
+Six mois d'historique, c'est 111 pannes thermiques à l'usine B et 115 remplacements d'outil
+à l'usine A : trop peu pour départager des modèles. Deux scripts prolongent la simulation
+de chaque usine du 29/06/2024 au 12/11/2026, avec exactement les règles de son notebook
+Gold. Pour l'usine B s'ajoutent les signes avant-coureurs H1 à H3. L'usure de l'outil
+reprend là où les six premiers mois s'arrêtent.
 
-| | Six mois du Gold | Extension simulée | Total |
+| Script | Usines | Bilan |
+|---|---|---|
+| `mspr841/ml/etendre_historique_B.py` | B | `data/gold/extension_usine_B.json` |
+| `mspr841/ml/etendre_historique_AC.py` | A et C | `data/gold/extension_usines_A_C.json` |
+
+Chaque usine passe de 8 640 à 50 209 sessions (34 mois). La cohérence de l'extension avec
+les six mois d'origine est vérifiée sur les indicateurs clés :
+
+| Usine | Indicateur | Six mois du Gold | Extension simulée |
 |---|---|---|---|
-| Sessions de 30 min | 8 640 | 41 569 | 50 209 |
-| Pannes thermiques | 111 | 542 | 653 |
-| Taux de panne par session | 1,28 % | 1,30 % | 1,30 % |
-| Delta thermique moyen | 11,01 K | 10,98 K | 10,99 K |
+| A | Remplacements d'outil | 115 | 561 |
+| A | Taux de panne par session | 2,80 % | 2,56 % |
+| A | Taux de rebut moyen | 4,44 % | 4,40 % |
+| A | Temps de cycle moyen | 45,36 min | 45,36 min |
+| B | Pannes thermiques | 111 | 542 |
+| B | Taux de panne thermique par session | 1,28 % | 1,30 % |
+| B | Delta thermique moyen | 11,01 K | 10,98 K |
+| C | Remplacements d'outil | 147 | 708 |
+| C | Taux de panne par session | 2,49 % | 2,27 % |
+| C | Taux de rebut moyen | 11,16 % | 11,06 % |
 
 Les six premiers mois ne sont pas modifiés : ce sont ceux que les tableaux de bord
-rejouent. Le fichier étendu (`data/gold/usine_B_historique.parquet`) ne sert qu'à
-l'entraînement. La date de fin est fixée dans le script, pour que le résultat soit
-reproductible. L'usine A n'a pas été étendue : son modèle est déjà au plancher d'erreur
-(§5), des données supplémentaires n'y changeraient rien.
+rejouent. Les fichiers étendus (`data/gold/usine_A_historique.parquet`, `usine_B_…`,
+`usine_C_…`) ne servent qu'à l'entraînement et à l'analyse. La date de fin est fixée dans
+les scripts, pour que le résultat soit reproductible. L'historique de l'usine C est prêt
+mais aucun modèle ne l'utilise encore : le bloc 4 ne prévoit pas de modèle pour ce site.
 
 ### Limites connues des données
 
-- Volume : 6 mois et 115 remplacements d'outil pour l'usine A ; 34 mois et 653 pannes thermiques pour l'usine B après extension, dont 28 mois entièrement simulés par nos soins.
+- Volume : 34 mois par usine après extension, dont 28 mois entièrement simulés par nos soins : 676 remplacements d'outil à l'usine A, 653 pannes thermiques à l'usine B.
 - Simplifications : une seule cause dominante par usine ; pas d'effet de l'opérateur, de la matière ou de la saison.
 - Biais : l'usure est quasi linéaire ; les pannes thermiques sont en partie aléatoires et leurs signes avant-coureurs sont une hypothèse de simulation. Les scores ci-dessous reflètent ces règles, pas le comportement de machines réelles.
 - Session : les données sont à la maille de 30 minutes ; aucun signal haute fréquence (vibrations).
@@ -129,29 +144,38 @@ La même démarche est appliquée aux deux cas (`mspr841/ml/train_models.py`).
 
 - Cible : nombre de sessions avant le prochain remplacement d'outil.
 - Variables : 11 mesures instantanées (usure cumulée, TRS, temps de cycle, dérive, disponibilité, performance, qualité, consommation, vitesse, couple, taux de rebut).
-- Volume : 8 464 sessions.
+- Volume : 49 487 sessions sur 34 mois (historique étendu, §1).
 
 | Modèle | MAE (sessions) | RMSE | R² |
 |---|---|---|---|
-| Moyenne (référence naïve) | 18,39 | 21,25 | 0,000 |
-| Linéaire sur l'usure seule (retenu) | 1,05 | 1,35 | 0,996 |
-| Ridge (11 variables) | 1,05 | 1,35 | 0,996 |
-| Random Forest | 1,09 | 1,41 | 0,996 |
-| Gradient Boosting | 1,08 | 1,38 | 0,996 |
-| Extra Trees | 1,08 | 1,39 | 0,996 |
-| Gradient Boosting par histogrammes | 1,08 | 1,38 | 0,996 |
-| k plus proches voisins | 3,01 | 3,96 | 0,965 |
-| Réseau de neurones (MLP) | 1,23 | 1,58 | 0,994 |
+| Moyenne (référence naïve) | 18,31 | 21,15 | 0,000 |
+| Linéaire sur l'usure seule (retenu) | 1,13 | 1,48 | 0,995 |
+| Ridge (11 variables) | 1,13 | 1,48 | 0,995 |
+| Random Forest | 1,16 | 1,52 | 0,995 |
+| Gradient Boosting | 1,14 | 1,50 | 0,995 |
+| Extra Trees | 1,15 | 1,51 | 0,995 |
+| Gradient Boosting par histogrammes | 1,14 | 1,49 | 0,995 |
+| k plus proches voisins | 2,29 | 2,95 | 0,980 |
+| Réseau de neurones (MLP) | 1,21 | 1,57 | 0,995 |
 
-Interprétation. L'erreur moyenne est d'environ une session, soit 30 minutes. Les modèles
+Interprétation. L'erreur moyenne est d'un peu plus d'une session, soit 34 minutes. Les modèles
 complexes n'apportent rien : la durée de vie se déduit presque entièrement de l'usure
 cumulée. Le modèle retenu est donc le plus simple, et le plus facile à expliquer à un
 technicien (« chaque point d'usure consomme une durée connue »).
 
-Ce qui n'a pas marché. Les k plus proches voisins font trois fois plus d'erreur : sur onze
-variables mises à la même échelle, dix ne portent aucune information sur la durée restante
-et brouillent la notion de voisinage. Le réseau de neurones est moins bon et moins stable
-que la droite : il doit apprendre une relation linéaire qu'on peut écrire directement.
+Ce qui n'a pas marché.
+
+- Davantage de données n'a pas réduit l'erreur. Sur six mois, le modèle affichait 1,05
+  session ; sur 34 mois, 1,13. Le premier chiffre était un échantillon favorable : le
+  plancher théorique est de 1,10 (§5). Le modèle était déjà au maximum ; les données
+  supplémentaires ont rendu la mesure plus juste (écart entre plis de 0,03 au lieu de
+  0,07), pas le modèle meilleur.
+- Les k plus proches voisins font deux fois plus d'erreur : sur onze variables mises à la
+  même échelle, dix ne portent aucune information sur la durée restante et brouillent la
+  notion de voisinage. Ils progressent avec le volume (3,01 sur six mois), sans rattraper
+  les autres.
+- Le réseau de neurones reste derrière la droite : il doit apprendre une relation linéaire
+  qu'on peut écrire directement.
 
 Limite. Ce R² très élevé vient de la simulation, où l'usure progresse presque
 linéairement. Sur des machines réelles (usure non linéaire, casse brutale, changement de
@@ -242,8 +266,8 @@ du modèle : la mesure sur six mois reposait sur 111 pannes et variait de 0,03 d
 l'autre. Celle sur 34 mois repose sur 653 pannes et ne varie plus que de 0,007. C'est le
 chiffre de l'étape 3 qu'il faut retenir. Le rappel de l'alerte, lui, progresse de 62 à 70 %.
 
-Usine A. L'erreur moyenne du modèle (1,05 session) est au plancher : le prédicteur
-parfait, estimé sur 20 000 vies d'outil simulées, fait 1,10. Le nombre de sessions restantes
+Usine A. L'erreur moyenne du modèle (1,13 session sur 34 mois) est au plancher : le
+prédicteur parfait, estimé sur 20 000 vies d'outil simulées, fait 1,10. Le nombre de sessions restantes
 dépend des pièces qui seront usinées, tirées au hasard. Le modèle A n'a donc pas été modifié.
 
 Limite à dire au jury. Le gain du modèle B vient d'une hypothèse de simulation, pas
@@ -289,6 +313,7 @@ l'historique est maintenant transmis par le dashboard, et les features sont part
 pip install -r mspr841/ml/requirements.txt
 python mspr841/ml/enrichir_usine_B.py     # signes avant-coureurs (usine B)
 python mspr841/ml/etendre_historique_B.py # historique étendu jusqu'au 12/11/2026
+python mspr841/ml/etendre_historique_AC.py # idem pour les usines A et C
 python mspr841/ml/train_models.py
 python mspr841/ml/plafond_theorique.py
 ```

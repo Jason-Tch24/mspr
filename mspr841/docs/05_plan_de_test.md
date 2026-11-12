@@ -151,7 +151,7 @@ l'ensemble avant la soutenance, sur la machine de démonstration.
 
 | Critère | Seuil | Résultat | Verdict |
 |---|---|---|---|
-| Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,05 session | Fait |
+| Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,13 session | Fait |
 | Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,80 | Fait |
 | Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 53 % / 81 % | Fait |
 | Tests automatisés | 100 % réussis | 61 / 61 | Fait |

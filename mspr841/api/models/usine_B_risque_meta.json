@@ -98,6 +98,6 @@
     }
   },
   "limite_connue": "Les pannes simulées suivent un processus aléatoire dont seul le taux dépend du régime thermique : le modèle estime un NIVEAU DE RISQUE, il ne peut pas annoncer l'instant exact d'une panne. Recalibrage indispensable sur données terrain.",
-  "date_entrainement": "2026-11-12T10:59:53",
+  "date_entrainement": "2026-11-12T11:34:36",
   "scikit_learn": "1.8.0"
 }

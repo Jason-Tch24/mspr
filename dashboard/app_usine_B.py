@@ -736,7 +736,16 @@ _FAULT_PRESETS_B = {
         'panne_thermique': 1,       'usure_cumulee_pct': 88.0,
         'indice_stabilite_process': 0.15,
     },
+    # Signe avant-coureur : le delta part du nominal et baisse de 2 K en 12 h.
+    'derive': {
+        'temp_process_delta': 9.5, 'nb_pannes_7j': 6,
+        'indice_stabilite_process': 0.84, 'usure_cumulee_pct': 60.0,
+    },
 }
+
+_LIBELLE_DERIVE_B = 'Dérive progressive (11,5 K à 9,5 K en 12 h)'
+# Historique envoyé à l'IA pour ce scénario : 12 h au nominal, puis 12 h de baisse.
+_HISTORIQUE_DERIVE_B = [11.5] * 23 + [round(11.5 - 2.0 * (i / 24) ** 1.5, 2) for i in range(24)]
 
 def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) -> html.Div:
     """Onglet IA : appelle l'API FastAPI et affiche la classification thermique."""
@@ -765,11 +774,12 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
         ]),
         html.Div(style={'padding': '12px 16px', 'display': 'flex', 'gap': '10px',
                         'flexWrap': 'wrap', 'alignItems': 'center'}, children=[
+            _fault_btn('Dérive progressive',     'fault-btn-derive-B',      theme['warning']),
             _fault_btn('Dissipation dégradée (delta 9,2 K)', 'fault-btn-surchauffe-B', theme['warning']),
             _fault_btn('Panne imminente',        'fault-btn-panne-B',       theme['critical']),
             _fault_btn('Reprendre le simulateur',    'fault-btn-clear-B',       theme['ok']),
             html.Div(
-                'Le simulateur continue — les champs injectés remplacent ses valeurs jusqu\'à "Reprendre".',
+                'Le simulateur continue : les champs injectés remplacent ses valeurs jusqu\'à "Reprendre".',
                 style={'fontSize': '12px', 'color': theme['text_muted'],
                        'flexBasis': '100%'},
             ),
@@ -807,7 +817,9 @@ def build_tab_ai_B(state: dict, theme: dict, active_fault: str | None = None) ->
     # Historique thermique des 24 dernières heures : le modèle évalue le régime,
     # pas la seule mesure courante. En panne injectée, on simule un régime établi.
     fault_delta = store.get_fault_injection(USINE_ID).get('temp_process_delta')
-    if fault_delta is not None:
+    if fault_delta is not None and active_fault == _LIBELLE_DERIVE_B:
+        historique = list(_HISTORIQUE_DERIVE_B)
+    elif fault_delta is not None:
         historique = [float(fault_delta)] * _HISTORIQUE_SESSIONS
     else:
         buf = store.get_buffer_as_df(USINE_ID)
@@ -1110,12 +1122,16 @@ def update_page_B(n, active_tab, active_fault):
     Input('fault-btn-surchauffe-B', 'n_clicks'),
     Input('fault-btn-panne-B',      'n_clicks'),
     Input('fault-btn-clear-B',      'n_clicks'),
+    Input('fault-btn-derive-B',     'n_clicks'),
     prevent_initial_call=True,
 )
-def handle_fault_B(n_surch, n_panne, n_clear):
+def handle_fault_B(n_surch, n_panne, n_clear, n_derive):
     triggered = bouton_clique(ctx.triggered)
     if triggered is None:      # simple rafraîchissement de l'onglet, aucun clic
         raise PreventUpdate
+    if triggered == 'fault-btn-derive-B':
+        store.inject_fault(USINE_ID, _FAULT_PRESETS_B['derive'])
+        return _LIBELLE_DERIVE_B
     if triggered == 'fault-btn-surchauffe-B':
         store.inject_fault(USINE_ID, _FAULT_PRESETS_B['surchauffe'])
         return 'Dissipation dégradée (delta 9,2 K)'

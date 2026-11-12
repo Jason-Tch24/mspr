@@ -1,4 +1,4 @@
-# 08 — Conduite du changement et accompagnement des métiers
+# 08. Conduite du changement et accompagnement des métiers
 
 > Compétence visée : *conduire le changement auprès des métiers lors du déploiement, par une
 > démarche de participation, de communication et de formation.*
@@ -12,19 +12,19 @@
 | Le technicien décide sur son expérience seule | Il décide avec un indicateur supplémentaire, qu'il peut contester |
 | Les seuils sont figés dans les automates | Les seuils d'alerte de l'IA sont réglables par le responsable maintenance |
 
-Le changement porte moins sur l'outil que sur la **façon de décider** : faire confiance à
+Le changement porte moins sur l'outil que sur la façon de décider : faire confiance à
 une estimation, sans lui obéir aveuglément.
 
 ## 2. Acteurs concernés
 
 | Acteur | Impact | Attitude probable | Levier |
 |---|---|---|---|
-| Techniciens de maintenance | Fort — leur priorisation quotidienne change | Méfiance : « la machine, je la connais mieux qu'un algorithme » | Les associer au réglage des seuils ; valoriser leurs retours |
-| Responsables maintenance | Fort — nouvelle façon de planifier | Intérêt, crainte d'être jugés sur les alertes manquées | Clarifier que l'outil aide, la responsabilité ne change pas |
-| Responsables de production | Moyen — arrêts planifiés à intégrer | Favorables si les arrêts imprévus baissent | Montrer le gain en disponibilité |
-| Opérateurs | Faible — pas d'usage direct | Inquiétude : surveillance des personnes ? | Dire explicitement que l'outil suit les machines, pas les salariés |
-| Direction qualité | Moyen — traçabilité | Favorable | Les impliquer dans les messages et la validation |
-| DSI / équipe data | Fort — exploitation d'un nouveau service | Charge supplémentaire | Automatisation (CI, conteneurs), documentation |
+| Techniciens de maintenance | Fort : leur priorisation quotidienne change | Méfiance : « la machine, je la connais mieux qu'un algorithme » | Les associer au réglage des seuils ; valoriser leurs retours |
+| Responsables maintenance | Fort : nouvelle façon de planifier | Intérêt, crainte d'être jugés sur les alertes manquées | Clarifier que l'outil aide, la responsabilité ne change pas |
+| Responsables de production | Moyen : arrêts planifiés à intégrer | Favorables si les arrêts imprévus baissent | Montrer le gain en disponibilité |
+| Opérateurs | Faible : pas d'usage direct | Inquiétude : surveillance des personnes ? | Dire explicitement que l'outil suit les machines, pas les salariés |
+| Direction qualité | Moyen : traçabilité | Favorable | Les impliquer dans les messages et la validation |
+| DSI / équipe data | Fort : exploitation d'un nouveau service | Charge supplémentaire | Automatisation (CI, conteneurs), documentation |
 | Direction industrielle | Sponsor | Attente de résultats rapides | Indicateurs de suivi, jalons réalistes |
 | Représentants du personnel | Consultés | Vigilance | Information en amont, finalité limitée à la maintenance |
 
@@ -37,13 +37,13 @@ par trois phases, à accompagner différemment.
 
 | Phase | Ce que vivent les équipes | Actions |
 |---|---|---|
-| **1. La fin** — quitter l'ancien | Perte de repères : le planning préventif rassurait ; crainte de voir son expertise remplacée | Reconnaître ce qui fonctionnait ; dire ce qui ne change pas (la décision reste humaine, le préventif réglementaire est maintenu) ; expliquer pourquoi changer (coût des arrêts imprévus) |
-| **2. La zone neutre** — l'entre-deux | Double fonctionnement, doutes, fausses alertes, charge de travail accrue | Mode observation sans conséquence ; référent IA présent dans l'atelier ; points hebdomadaires courts ; droit à l'erreur affiché ; corriger vite les irritants |
-| **3. Le nouveau départ** | L'outil entre dans la routine | Célébrer les premières pannes évitées ; intégrer l'onglet IA au rituel de prise de poste ; confier le réglage des seuils aux équipes |
+| 1. La fin : quitter l'ancien | Perte de repères : le planning préventif rassurait ; crainte de voir son expertise remplacée | Reconnaître ce qui fonctionnait ; dire ce qui ne change pas (la décision reste humaine, le préventif réglementaire est maintenu) ; expliquer pourquoi changer (coût des arrêts imprévus) |
+| 2. La zone neutre : l'entre-deux | Double fonctionnement, doutes, fausses alertes, charge de travail accrue | Mode observation sans conséquence ; référent IA présent dans l'atelier ; points hebdomadaires courts ; droit à l'erreur affiché ; corriger vite les irritants |
+| 3. Le nouveau départ | L'outil entre dans la routine | Célébrer les premières pannes évitées ; intégrer l'onglet IA au rituel de prise de poste ; confier le réglage des seuils aux équipes |
 
 ### 3.2 Roue du futur (Future Wheel)
 
-Changement central : **« la maintenance agit sur des alertes prédictives »**.
+Changement central : « la maintenance agit sur des alertes prédictives ».
 
 ```mermaid
 flowchart TD
@@ -109,7 +109,7 @@ un mémo plastifié près des postes ; une session de rappel un mois après.
 | Action | Cible | Quand |
 |---|---|---|
 | Entretiens de recueil des besoins (document 01) | Tous les profils | Phase 0 |
-| Désigner un **référent IA** volontaire par site, issu de la maintenance | Techniciens | Phase 0 |
+| Désigner un référent IA volontaire par site, issu de la maintenance | Techniciens | Phase 0 |
 | Atelier de rédaction des messages d'alerte avec les techniciens | Maintenance, qualité | Phase 1 |
 | Réglage collectif des seuils à partir des alertes du mode observation | Maintenance | Fin de phase 1 |
 | Circuit de retour « alerte confirmée / infirmée », utilisé pour ré-entraîner les modèles | Techniciens | Phases 1 à 5 |

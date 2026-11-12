@@ -95,10 +95,13 @@ def _row_to_dict(row: pd.Series) -> dict:
 _simulation_running = False
 _simulation_thread: threading.Thread | None = None
 
-# Timestamp de démarrage réel — utilisé pour générer
-# un timestamp simulé cohérent affiché dans le dashboard
+# Horloge simulée : elle part de l'instant réel du lancement (arrondi à la
+# demi-heure) et avance de 30 min à chaque tick. L'historique d'entraînement
+# s'arrête le 12/11/2026 ; le flux affiché prend la suite à partir d'aujourd'hui.
 _sim_start_real: datetime | None = None
-_sim_start_simulated: datetime = datetime(2024, 1, 1, 6, 0, 0)
+_maintenant = datetime.now()
+_sim_start_simulated: datetime = _maintenant.replace(
+    minute=30 if _maintenant.minute >= 30 else 0, second=0, microsecond=0)
 
 
 def _tick_loop() -> None:

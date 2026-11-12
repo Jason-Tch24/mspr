@@ -1,0 +1,20 @@
+{
+  "source": "usine_B.parquet",
+  "graine": 2026,
+  "periode": [
+    "2024-01-01 06:00:00",
+    "2026-11-12 06:00:00"
+  ],
+  "sessions_gold": 8640,
+  "sessions_simulees": 41569,
+  "sessions_total": 50209,
+  "pannes_thermiques_gold": 111,
+  "pannes_thermiques_simulees": 542,
+  "pannes_thermiques_total": 653,
+  "pannes_annoncees_dans_l_extension": 438,
+  "derives_sans_panne_dans_l_extension": 136,
+  "taux_de_panne_gold": 0.0128,
+  "taux_de_panne_extension": 0.013,
+  "delta_moyen_gold": 11.008,
+  "delta_moyen_extension": 10.983
+}

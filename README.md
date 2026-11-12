@@ -1,19 +1,19 @@
-# MECHA — Pilotage industriel et maintenance prédictive
+# MECHA : Pilotage industriel et maintenance prédictive
 
 Projet MSPR EPSI (I1 EISI IA, RNCP 35584) pour l'entreprise fictive MECHA.
 
-- **TPRE831 (bloc 3)** : pipeline de données Bronze / Silver / Gold et dashboards temps réel.
-- **TPRE841 (bloc 4)** : solution d'IA de maintenance prédictive, exposée par une API et
+- TPRE831 (bloc 3) : pipeline de données Bronze / Silver / Gold et dashboards temps réel.
+- TPRE841 (bloc 4) : solution d'IA de maintenance prédictive, exposée par une API et
   intégrée aux dashboards métiers, conteneurisée et testée en intégration continue.
 
 ## Ce que fait la solution
 
 | Usine | Question métier | Réponse de l'IA |
 |---|---|---|
-| A — Lyon | Dans combien de temps faut-il changer l'outil de coupe ? | Durée de vie résiduelle (RUL), en sessions de 30 min et en heures |
-| B — Bordeaux | Cette machine risque-t-elle une panne thermique dans les 24 h ? | Probabilité de panne et niveau Normal / À risque / Critique |
+| A (Lyon) | Dans combien de temps faut-il changer l'outil de coupe ? | Durée de vie résiduelle (RUL), en sessions de 30 min et en heures |
+| B (Bordeaux) | Cette machine risque-t-elle une panne thermique dans les 24 h ? | Probabilité de panne et niveau Normal / À risque / Critique |
 
-Les résultats sont affichés dans l'onglet **Prédictions IA** des dashboards des usines A et B.
+Les résultats sont affichés dans l'onglet Prédictions IA des dashboards des usines A et B.
 
 ## Démarrage rapide (Docker)
 
@@ -49,6 +49,8 @@ cd dashboard && python app_usine_B.py
 ```bash
 pytest                                  # 61 tests : API, features, règles, dashboard
 python mspr841/ml/enrichir_usine_B.py   # ajoute les signes avant-coureurs aux données de l'usine B
+python mspr841/ml/etendre_historique_B.py   # prolonge l'historique de l'usine B jusqu'au 12/11/2026
+python mspr841/ml/etendre_historique_AC.py  # idem pour les usines A et C
 python mspr841/ml/train_models.py       # ré-entraîne et compare les modèles
 python mspr841/ml/plafond_theorique.py  # meilleur score atteignable sur ces données
 flake8 dashboard/ mspr841/ --select=E9,F --extend-ignore=F401,F841
@@ -69,6 +71,8 @@ mspr841/
     models/              Modèles entraînés + métadonnées et métriques
   ml/train_models.py  Entraînement, comparaison et sélection des modèles
   ml/enrichir_usine_B.py   Signes avant-coureurs des pannes thermiques (données usine B)
+  ml/etendre_historique_B.py  Historique d'entraînement étendu (usine B, 34 mois)
+  ml/etendre_historique_AC.py Historiques étendus des usines A et C
   ml/plafond_theorique.py  Plafond de performance calculé depuis la loi de simulation
   tests/              Tests de l'API et des features
   docs/               Dossier du bloc 4 (voir ci-dessous)
@@ -80,16 +84,16 @@ docker-compose.yml    Stack complète : API + 4 dashboards
 
 | Document | Contenu |
 |---|---|
-| [01 — Besoins métiers](mspr841/docs/01_besoins_metiers.md) | Guide d'entretien, questionnaire, synthèse des besoins et contraintes |
-| [02 — Architecture](mspr841/docs/02_architecture.md) | Schéma, composants, flux, choix justifiés, tolérance aux pannes |
-| [03 — Données et modèles](mspr841/docs/03_donnees_et_modeles.md) | Jeux de données, dictionnaire, modèles étudiés, résultats, limites, RGPD |
-| [04 — Solution applicative](mspr841/docs/04_solution_applicative.md) | Intégration IA ↔ application, paramétrage, règles métier, écrans |
-| [05 — Plan de test](mspr841/docs/05_plan_de_test.md) | Stratégie, cas de test, jeux d'essai, résultats, validation |
-| [06 — Déploiement et intégration continue](mspr841/docs/06_deploiement_et_ci.md) | Docker, CI, exploitation, projection multi-sites |
-| [07 — Conformité et guide utilisateur](mspr841/docs/07_conformite_et_guide_utilisateur.md) | Cahier des charges ↔ réalisation, guide métier |
-| [08 — Conduite du changement](mspr841/docs/08_conduite_du_changement.md) | Acteurs, plan d'action, formation, déploiement progressif |
-| [09 — Usage de l'IA générative](mspr841/docs/09_usage_ia_generative.md) | Prompts utilisés et vérifications effectuées |
-| [10 — Prompts de reproduction](mspr841/docs/10_prompts_de_reproduction.md) | Un prompt par livrable, rédigé après coup |
+| [01. Besoins métiers](mspr841/docs/01_besoins_metiers.md) | Guide d'entretien, questionnaire, synthèse des besoins et contraintes |
+| [02. Architecture](mspr841/docs/02_architecture.md) | Schéma, composants, flux, choix justifiés, tolérance aux pannes |
+| [03. Données et modèles](mspr841/docs/03_donnees_et_modeles.md) | Jeux de données, dictionnaire, modèles étudiés, résultats, limites, RGPD |
+| [04. Solution applicative](mspr841/docs/04_solution_applicative.md) | Intégration IA ↔ application, paramétrage, règles métier, écrans |
+| [05. Plan de test](mspr841/docs/05_plan_de_test.md) | Stratégie, cas de test, jeux d'essai, résultats, validation |
+| [06. Déploiement et intégration continue](mspr841/docs/06_deploiement_et_ci.md) | Docker, CI, exploitation, projection multi-sites |
+| [07. Conformité et guide utilisateur](mspr841/docs/07_conformite_et_guide_utilisateur.md) | Cahier des charges ↔ réalisation, guide métier |
+| [08. Conduite du changement](mspr841/docs/08_conduite_du_changement.md) | Acteurs, plan d'action, formation, déploiement progressif |
+| [09. Usage de l'IA générative](mspr841/docs/09_usage_ia_generative.md) | Prompts utilisés et vérifications effectuées |
+| [10. Prompts de reproduction](mspr841/docs/10_prompts_de_reproduction.md) | Un prompt par livrable, rédigé après coup |
 
 ## Limite à garder en tête
 

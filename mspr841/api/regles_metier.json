@@ -5,9 +5,9 @@
     "rul_critical_sessions": 10,
     "rul_warning_sessions": 20,
     "messages": {
-      "CRITICAL": "Remplacement outil IMMINENT — {rul:.0f} session(s) restante(s) ({heures:.1f} h). Planifier l'intervention maintenant.",
+      "CRITICAL": "Remplacement outil IMMINENT : {rul:.0f} session(s) restante(s) ({heures:.1f} h). Planifier l'intervention maintenant.",
       "WARNING": "Remplacement outil dans {rul:.0f} sessions ({heures:.1f} h). Anticiper la préparation de l'outil de rechange.",
-      "OK": "Outil en bon état — {rul:.0f} sessions restantes ({heures:.1f} h) avant le prochain remplacement."
+      "OK": "Outil en bon état : {rul:.0f} sessions restantes ({heures:.1f} h) avant le prochain remplacement."
     }
   },
   "usine_B": {
@@ -16,9 +16,9 @@
     "seuil_critical": 0.65,
     "noms": {"OK": "Normal", "WARNING": "À risque", "CRITICAL": "Critique"},
     "messages": {
-      "CRITICAL": "Risque thermique CRITIQUE — probabilité de panne sous 24 h : {proba:.0%}. Contrôler le refroidissement sans attendre.",
-      "WARNING": "Machine À RISQUE — probabilité de panne thermique sous 24 h : {proba:.0%}. Vérifier le circuit de refroidissement dans le poste.",
-      "OK": "Fonctionnement normal — probabilité de panne thermique sous 24 h : {proba:.0%}."
+      "CRITICAL": "Risque thermique CRITIQUE : probabilité de panne sous 24 h : {proba:.0%}. Contrôler le refroidissement sans attendre.",
+      "WARNING": "Machine À RISQUE : probabilité de panne thermique sous 24 h : {proba:.0%}. Vérifier le circuit de refroidissement dans le poste.",
+      "OK": "Fonctionnement normal : probabilité de panne thermique sous 24 h : {proba:.0%}."
     }
   }
 }

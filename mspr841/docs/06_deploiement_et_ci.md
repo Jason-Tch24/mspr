@@ -1,4 +1,4 @@
-# 06 — Déploiement, intégration continue et mise en œuvre dans les usines
+# 06. Déploiement, intégration continue et mise en œuvre dans les usines
 
 > Compétence visée : *appliquer l'intégration continue à l'aide d'un outil dédié afin de
 > vérifier la conformité de la solution.*
@@ -15,12 +15,12 @@
 
 Points de conception :
 
-- **Image autonome** : les modèles et leurs métadonnées sont embarqués ; aucune étape manuelle avant le lancement.
-- **Healthcheck métier** : l'API n'est déclarée saine que si les modèles sont chargés (`modeles_ok`).
-- **Ordre de démarrage** : les dashboards A et B attendent que l'API soit saine (`depends_on: service_healthy`).
-- **Réseau interne** : les dashboards appellent `http://api:8000` (variable `MECHA_API_URL`) ; seuls les ports utiles sont publiés.
-- **Redémarrage automatique** : `restart: unless-stopped`.
-- **Moindre privilège** : l'API ne tourne pas en `root`.
+- Image autonome : les modèles et leurs métadonnées sont embarqués ; aucune étape manuelle avant le lancement.
+- Healthcheck métier : l'API n'est déclarée saine que si les modèles sont chargés (`modeles_ok`).
+- Ordre de démarrage : les dashboards A et B attendent que l'API soit saine (`depends_on: service_healthy`).
+- Réseau interne : les dashboards appellent `http://api:8000` (variable `MECHA_API_URL`) ; seuls les ports utiles sont publiés.
+- Redémarrage automatique : `restart: unless-stopped`.
+- Moindre privilège : l'API ne tourne pas en `root`.
 
 ### Exécuter la solution
 
@@ -44,7 +44,7 @@ docker compose down                 # arrêt
 
 ## 2. Intégration continue
 
-Outil : **GitHub Actions**, fichier `.github/workflows/ci.yml`. Déclenchement à chaque push
+Outil : GitHub Actions, fichier `.github/workflows/ci.yml`. Déclenchement à chaque push
 sur `main` ou sur une branche `feature/**`, et à chaque pull request vers `main`.
 
 ```mermaid
@@ -95,7 +95,7 @@ fusion dans `main`.
 | 2. Pilote opérationnel | 3 mois | Même site ; la maintenance agit sur les alertes | Fausses alertes à un niveau accepté par la maintenance ; arrêts non planifiés en baisse |
 | 3. Extension France | 6 mois | Les deux autres sites français | Modèles recalibrés par site ; équipes formées |
 | 4. Extension Espagne | 6 mois | Les deux sites espagnols | Interface et supports traduits ; hébergement conforme |
-| 5. Régime permanent | — | Cinq sites | Suivi de dérive et ré-entraînement planifiés |
+| 5. Régime permanent | - | Cinq sites | Suivi de dérive et ré-entraînement planifiés |
 
 Le mode observation est la garantie que l'IA ne perturbe pas la production tant qu'elle n'a
 pas fait ses preuves sur des données réelles.
@@ -129,9 +129,9 @@ pas fait ses preuves sur des données réelles.
 
 ### Limites et points de vigilance
 
-- **Performance non démontrée sur données réelles** : les scores actuels dépendent des règles de simulation.
-- **Fausses alertes** : même au niveau « Normal », des pannes surviennent ; l'outil priorise, il ne garantit pas.
-- **Fréquence d'appel** : le prototype interroge l'IA à chaque rafraîchissement d'écran ; à l'échelle, un calcul par nouvelle session, mis en cache.
-- **Volume** : 4 machines par usine dans le prototype ; des centaines de machines demandent un traitement par lots et plusieurs instances de l'API.
-- **Maille temporelle** : sessions de 30 minutes ; les défaillances rapides (vibrations, casse) demandent des signaux haute fréquence et d'autres modèles.
-- **Historisation** : les prédictions ne sont pas conservées ; indispensable pour mesurer la précision réelle des alertes et pour la traçabilité exigée par les clients.
+- Performance non démontrée sur données réelles : les scores actuels dépendent des règles de simulation.
+- Fausses alertes : même au niveau « Normal », des pannes surviennent ; l'outil priorise, il ne garantit pas.
+- Fréquence d'appel : le prototype interroge l'IA à chaque rafraîchissement d'écran ; à l'échelle, un calcul par nouvelle session, mis en cache.
+- Volume : 4 machines par usine dans le prototype ; des centaines de machines demandent un traitement par lots et plusieurs instances de l'API.
+- Maille temporelle : sessions de 30 minutes ; les défaillances rapides (vibrations, casse) demandent des signaux haute fréquence et d'autres modèles.
+- Historisation : les prédictions ne sont pas conservées ; indispensable pour mesurer la précision réelle des alertes et pour la traçabilité exigée par les clients.

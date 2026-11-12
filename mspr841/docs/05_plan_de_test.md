@@ -1,4 +1,4 @@
-# 05 — Plan de test et validation
+# 05. Plan de test et validation
 
 > Compétence visée : *effectuer les tests de la solution pour identifier les erreurs et
 > établir les plans de correction avant la mise en production.*
@@ -8,14 +8,14 @@
 | Niveau | Objet | Outil | Automatisé | Où |
 |---|---|---|---|---|
 | Unitaire | Calcul des features, règles de seuils, store du dashboard | pytest | Oui | `mspr841/tests/test_features.py`, `dashboard/test_store.py`, `dashboard/test_health.py` |
-| Intégration | API de scoring de bout en bout ; chaîne simulateur → store → KPI → alertes | pytest + FastAPI TestClient | Oui | `mspr841/tests/test_api.py`, `dashboard/test_pipeline_temps_reel.py` |
+| Intégration | API de scoring de bout en bout ; chaîne simulateur, store, KPI, alertes | pytest + FastAPI TestClient | Oui | `mspr841/tests/test_api.py`, `dashboard/test_pipeline_temps_reel.py` |
 | Qualité des modèles | Non-régression des performances | pytest sur les métadonnées | Oui | `test_api.py` (cas Q01 à Q03) |
 | Analyse statique | Erreurs de syntaxe, noms indéfinis | flake8 | Oui | CI |
 | Système | Images Docker, démarrage de la stack, prédiction dans le conteneur | Docker Compose + curl | Oui | CI, job `docker` |
 | Recette | Scénarios métier joués dans les dashboards | Manuel, cahier de recette (§5) | Non | Démonstration |
 
-Outils retenus : **pytest** pour l'exécution, **FastAPI TestClient** pour appeler l'API sans
-réseau, **GitHub Actions** pour rejouer la campagne à chaque modification et publier le
+Outils retenus : pytest pour l'exécution, FastAPI TestClient pour appeler l'API sans
+réseau, GitHub Actions pour rejouer la campagne à chaque modification et publier le
 rapport `junit.xml`.
 
 Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
@@ -34,7 +34,7 @@ Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
 
 ## 3. Cas de test automatisés
 
-### API — supervision
+### API : supervision
 
 | Id | Cas | Donnée de test | Résultat attendu |
 |---|---|---|---|
@@ -42,25 +42,25 @@ Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
 | API02 | Métadonnées des modèles | `GET /models` | Type et horizon cohérents avec les règles |
 | API03 | Règles exposées | `GET /regles` | Seuils identiques au fichier de configuration |
 
-### Usine A — durée de vie de l'outil
+### Usine A : durée de vie de l'outil
 
 | Id | Cas | Donnée de test | Résultat attendu |
 |---|---|---|---|
 | A01 | Outil neuf | usure 5 % | Niveau `OK`, RUL > 20 sessions |
 | A02 | Outil usé | usure 88 % | Niveau `CRITICAL`, message « IMMINENT » |
-| A03 | Cohérence physique | usure 0 → 90 % | RUL strictement décroissante, jamais négative |
+| A03 | Cohérence physique | usure de 0 à 90 % | RUL strictement décroissante, jamais négative |
 | A04 | Conversion | usure 45 % | heures = sessions × 0,5 |
 | A05 | Borne | usure 100 % | RUL = 0 |
 | A06 | Entrées invalides (4 variantes) | usure 120 %, TRS 1,4, champ absent, texte | `422` |
 | A07 | Seuils d'alerte (6 valeurs limites) | RUL 0 ; 10 ; 10,1 ; 20 ; 20,1 ; 60 | CRITICAL ; CRITICAL ; WARNING ; WARNING ; OK ; OK |
 
-### Usine B — risque thermique
+### Usine B : risque thermique
 
 | Id | Cas | Donnée de test | Résultat attendu |
 |---|---|---|---|
 | B01 | Régime nominal | 13,5 K établi | Niveau `OK`, « Normal », 47 sessions utilisées |
 | B02 | Dissipation dégradée | 7,8 K établi | Niveau `CRITICAL` |
-| B03 | Cohérence physique | 15 → 7,5 K | Probabilité croissante quand le delta baisse |
+| B03 | Cohérence physique | de 15 à 7,5 K | Probabilité croissante quand le delta baisse |
 | B04 | Mode dégradé | aucune session d'historique | `mode_degrade = true` |
 | B05 | Prise en compte de l'historique | 9,5 K stable / 9,5 K atteint après une dérive de 2 K en 12 h | Risque plus élevé après la dérive |
 | B06 | Cohérence des probabilités | 10 K | p entre 0 et 1, somme des deux classes = 1 |
@@ -105,7 +105,7 @@ Lancement : `pytest` à la racine du dépôt (environ 15 secondes).
 | Durée | ≈ 12 s |
 | Analyse statique flake8 (E9, F) | 0 erreur |
 | Build des images Docker | Réussi (API, dashboard) |
-| Test système | API saine dans son conteneur ; dashboard B servi ; appel dashboard → API par le réseau interne vérifié |
+| Test système | API saine dans son conteneur ; dashboard B servi ; appel du dashboard vers l'API par le réseau interne vérifié |
 
 Environnement : macOS, Python 3.13, puis rejoué sous Linux / Python 3.11 par la CI.
 
@@ -115,16 +115,17 @@ Environnement : macOS, Python 3.13, puis rejoué sous Linux / Python 3.11 par la
 
 | Id | Scénario | Étapes | Résultat attendu | Statut |
 |---|---|---|---|---|
-| R01 | Consulter la prédiction d'usure | Ouvrir http://localhost:8051, onglet Prédictions IA | Jauge RUL, badge de niveau, phrase d'action, modèle affiché | ✅ 10/11/2026 |
-| R02 | Outil en fin de vie | Cliquer « Usure critique (92 %) » | Badge CRITICAL, message « Remplacement outil IMMINENT » | ✅ 10/11/2026 |
-| R03 | Retour à la normale | Cliquer « Reprendre le simulateur » | Le badge revient au niveau du simulateur | ✅ 10/11/2026 |
-| R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet Prédictions IA | Niveau, probabilité sous 24 h, nombre de sessions analysées | ✅ 10/11/2026 |
-| R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | ✅ 10/11/2026 |
-| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,0 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | ✅ 10/11/2026 |
-| R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | ✅ 10/11/2026 |
-| R08 | Reprise de l'IA | `docker compose start api` | L'onglet IA affiche de nouveau une prédiction, sans redémarrer le dashboard | ✅ 10/11/2026 |
+| R01 | Consulter la prédiction d'usure | Ouvrir http://localhost:8051, onglet Prédictions IA | Jauge RUL, badge de niveau, phrase d'action, modèle affiché | Validé le 10/11/2026 |
+| R02 | Outil en fin de vie | Cliquer « Usure critique (92 %) » | Badge CRITICAL, message « Remplacement outil IMMINENT » | Validé le 10/11/2026 |
+| R03 | Retour à la normale | Cliquer « Reprendre le simulateur » | Le badge revient au niveau du simulateur | Validé le 10/11/2026 |
+| R04 | Consulter le risque thermique | Ouvrir http://localhost:8052, onglet Prédictions IA | Niveau, probabilité sous 24 h, nombre de sessions analysées | Validé le 10/11/2026 |
+| R05b | Dérive progressive | Cliquer « Dérive progressive » | Niveau « Critique », probabilité proche de 81 % : à 9,5 K, une baisse récente est plus risquée qu'un régime stable (60 %) | À jouer avant la soutenance |
+| R05 | Dissipation dégradée | Cliquer « Dissipation dégradée (delta 9,2 K) » | Niveau « À risque », message de vérification du refroidissement | Validé le 10/11/2026 |
+| R06 | Panne imminente | Cliquer « Panne imminente » (delta 7,6 K) | Niveau « Critique », probabilité proche de 80 %. La règle de supervision `derive_thermique` (limite à 5,0 K) ne se déclenche pas encore : l'IA signale le risque avant le franchissement du seuil | Validé le 10/11/2026 |
+| R07 | IA indisponible | `docker compose stop api`, recharger l'onglet | Message « API indisponible », les autres onglets fonctionnent | Validé le 10/11/2026 |
+| R08 | Reprise de l'IA | `docker compose start api` | L'onglet IA affiche de nouveau une prédiction, sans redémarrer le dashboard | Validé le 10/11/2026 |
 | R09 | Changer un seuil | Passer `seuil_warning` à 0,30 dans `regles_metier.json`, reconstruire l'API | Davantage de sessions classées « À risque » | ☐ à jouer |
-| R10 | Vue direction | Ouvrir http://localhost:8050 | Les trois usines et leur statut | ✅ 10/11/2026 |
+| R10 | Vue direction | Ouvrir http://localhost:8050 | Les trois usines et leur statut | Validé le 10/11/2026 |
 
 Les scénarios R01 à R08 et R10 ont été déroulés à l'écran dans Chrome le 10/11/2026, sur la
 stack Docker complète. R09 (changement de seuil) reste à jouer. L'équipe doit rejouer
@@ -150,28 +151,28 @@ l'ensemble avant la soutenance, sur la machine de démonstration.
 
 | Critère | Seuil | Résultat | Verdict |
 |---|---|---|---|
-| Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,05 session | ✅ |
-| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,81 | ✅ |
-| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 54 % / 82 % | ✅ |
-| Tests automatisés | 100 % réussis | 61 / 61 | ✅ |
-| Démarrage en conteneur | API saine, dashboards servis | Vérifié | ✅ |
-| Résistance à l'indisponibilité de l'IA | Dashboard utilisable | Vérifié par le code et R07 | ✅ |
+| Erreur du modèle A | MAE ≤ 2 sessions (1 h) | 1,13 session | Fait |
+| Discrimination du modèle B | ROC-AUC ≥ 0,70 | 0,80 | Fait |
+| Cohérence des niveaux d'alerte | Taux de panne croissant avec le niveau | 24 % / 53 % / 81 % | Fait |
+| Tests automatisés | 100 % réussis | 61 / 61 | Fait |
+| Démarrage en conteneur | API saine, dashboards servis | Vérifié | Fait |
+| Résistance à l'indisponibilité de l'IA | Dashboard utilisable | Vérifié par le code et R07 | Fait |
 
 ### Critères fonctionnels
 
 | Critère (issu des besoins, document 01) | Verdict |
 |---|---|
-| Une durée restante est affichée pour l'outil (BF1) | ✅ |
-| Un niveau normal / à risque est affiché, avec une action (BF2, BF3) | ✅ |
-| Les seuils sont réglables sans développement (BF4) | ✅ |
-| Les résultats sont dans les dashboards existants (BF5) | ✅ |
-| Une dégradation peut être simulée (BF6) | ✅ |
+| Une durée restante est affichée pour l'outil (BF1) | Fait |
+| Un niveau normal / à risque est affiché, avec une action (BF2, BF3) | Fait |
+| Les seuils sont réglables sans développement (BF4) | Fait |
+| Les résultats sont dans les dashboards existants (BF5) | Fait |
+| Une dégradation peut être simulée (BF6) | Fait |
 | Les prédictions sont historisées (BF9) | ❌ non réalisé |
 
 ### Réserves
 
 La validation porte sur des données simulées. Elle établit que la chaîne fonctionne de bout
-en bout et que les modèles se comportent de façon cohérente ; elle **n'établit pas** leur
+en bout et que les modèles se comportent de façon cohérente ; elle n'établit pas leur
 performance sur les machines de MECHA. Une phase pilote sur un site, avec des données
 réelles et un suivi des alertes confirmées ou non par la maintenance, est le préalable à
 tout déploiement (document 06).

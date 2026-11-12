@@ -38,8 +38,12 @@ import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    ExtraTreesRegressor,
     GradientBoostingClassifier,
     GradientBoostingRegressor,
+    HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor,
     RandomForestClassifier,
     RandomForestRegressor,
 )
@@ -53,6 +57,8 @@ from sklearn.metrics import (
     root_mean_squared_error,
 )
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -94,7 +100,12 @@ def _choisir(resultats: dict, metrique: str, plus_grand_mieux: bool) -> str:
 # ═════════════════════════════════════════════════════════════
 
 def preparer_usine_A() -> tuple[pd.DataFrame, pd.Series]:
-    df = pd.read_parquet(GOLD / "usine_A.parquet").sort_values("timestamp").reset_index(drop=True)
+    # Historique étendu (etendre_historique_AC.py) : les six mois du Gold, prolongés
+    # par simulation avec les mêmes règles. À défaut, les six mois seuls.
+    fichier = GOLD / "usine_A_historique.parquet"
+    if not fichier.exists():
+        fichier = GOLD / "usine_A.parquet"
+    df = pd.read_parquet(fichier).sort_values("timestamp").reset_index(drop=True)
     remplacement = df["remplacement_outil"].to_numpy()
     rul = np.full(len(df), np.nan)
     prochain = None
@@ -119,6 +130,13 @@ def candidats_A() -> dict:
         "RandomForestRegressor": RandomForestRegressor(
             n_estimators=200, min_samples_leaf=5, random_state=SEED, n_jobs=1),
         "GradientBoostingRegressor": GradientBoostingRegressor(random_state=SEED),
+        "ExtraTreesRegressor": ExtraTreesRegressor(
+            n_estimators=200, min_samples_leaf=5, random_state=SEED, n_jobs=1),
+        "HistGradientBoostingRegressor": HistGradientBoostingRegressor(
+            max_depth=3, max_iter=200, learning_rate=0.05, random_state=SEED),
+        "k plus proches voisins": make_pipeline(StandardScaler(), KNeighborsRegressor(n_neighbors=25)),
+        "Réseau de neurones (MLP)": make_pipeline(StandardScaler(), MLPRegressor(
+            hidden_layer_sizes=(32, 16), max_iter=500, early_stopping=True, random_state=SEED)),
     }
 
 
@@ -172,7 +190,12 @@ def entrainer_usine_A() -> dict:
 # ═════════════════════════════════════════════════════════════
 
 def preparer_usine_B() -> tuple[pd.DataFrame, pd.Series]:
-    df = pd.read_parquet(GOLD / "usine_B.parquet").sort_values("timestamp").reset_index(drop=True)
+    # Historique étendu (etendre_historique_B.py) : les six mois du Gold, prolongés
+    # par simulation avec les mêmes règles. À défaut, les six mois seuls.
+    fichier = GOLD / "usine_B_historique.parquet"
+    if not fichier.exists():
+        fichier = GOLD / "usine_B.parquet"
+    df = pd.read_parquet(fichier).sort_values("timestamp").reset_index(drop=True)
     panne = df["panne_thermique"].to_numpy()
     n = len(df)
     # Cible : au moins une panne thermique dans les HORIZON_B sessions SUIVANTES
@@ -197,6 +220,13 @@ def candidats_B() -> dict:
             n_estimators=300, min_samples_leaf=20, random_state=SEED, n_jobs=1),
         "GradientBoostingClassifier": GradientBoostingClassifier(
             n_estimators=150, max_depth=2, random_state=SEED),
+        "ExtraTreesClassifier": ExtraTreesClassifier(
+            n_estimators=300, min_samples_leaf=20, random_state=SEED, n_jobs=1),
+        "HistGradientBoostingClassifier": HistGradientBoostingClassifier(
+            max_depth=3, max_iter=150, learning_rate=0.05, l2_regularization=1.0, random_state=SEED),
+        "k plus proches voisins": make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=75)),
+        "Réseau de neurones (MLP)": make_pipeline(StandardScaler(), MLPClassifier(
+            hidden_layer_sizes=(32, 16), max_iter=300, early_stopping=True, random_state=SEED)),
     }
 
 
